@@ -6,7 +6,7 @@ import LeagueTable from './components/LeagueTable.jsx';
 import PointsEditor from './components/PointsEditor.jsx';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
 });
 
 const formatDateTime = (value) => {
