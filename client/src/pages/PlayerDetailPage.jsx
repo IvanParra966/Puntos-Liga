@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { FiArrowLeft } from 'react-icons/fi';
 import { Link, useParams } from 'react-router-dom';
 
 const formatDate = (value) => {
@@ -63,11 +64,75 @@ const getBestFinishInfo = (history = []) => {
   };
 };
 
-function StatCard({ label, value }) {
+const getRecordTotals = (history = []) => {
+  return history.reduce(
+    (acc, item) => {
+      acc.wins += Number(item.wins || 0);
+      acc.losses += Number(item.losses || 0);
+      acc.ties += Number(item.ties || 0);
+      return acc;
+    },
+    { wins: 0, losses: 0, ties: 0 }
+  );
+};
+
+const getWinRate = ({ wins, losses, ties }) => {
+  const total = wins + losses + ties;
+  if (!total) return '0%';
+  return `${((wins / total) * 100).toFixed(1)}%`;
+};
+
+function TopBadge({ label, value, tone = 'cyan' }) {
+  const toneClass =
+    tone === 'emerald'
+      ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300'
+      : tone === 'amber'
+      ? 'border-amber-400/20 bg-amber-400/10 text-amber-300'
+      : 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300';
+
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 break-words text-lg font-semibold text-white">{value}</p>
+    <div className={`rounded-2xl border px-4 py-3 ${toneClass}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-80">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </div>
+  );
+}
+
+function LeagueStatCard({ label, value, subtitle, wide = false }) {
+  return (
+    <div
+      className={`rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.18)] ${
+        wide ? 'sm:col-span-2' : ''
+      }`}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fuchsia-400">
+        {label}
+      </p>
+
+      <p className="mt-4 break-words text-2xl font-black leading-tight text-white sm:text-3xl">
+        {value}
+      </p>
+
+      {subtitle ? (
+        <p className="mt-2 text-sm text-slate-400">{subtitle}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function SummaryStatCard({ label, value, subtitle }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+      <div className="mb-4 h-1 w-12 rounded-full bg-cyan-400/80" />
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-3 break-words text-2xl font-bold text-white">{value}</p>
+      {subtitle ? (
+        <p className="mt-2 text-sm text-slate-400">{subtitle}</p>
+      ) : null}
     </div>
   );
 }
@@ -111,7 +176,11 @@ function HistoryTable({ history }) {
                   <td className="whitespace-nowrap px-4 py-3">{item.playersCount}</td>
 
                   <td className="whitespace-nowrap px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getPlacementTone(item.placing)}`}>
+                    <span
+                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getPlacementTone(
+                        item.placing
+                      )}`}
+                    >
                       {formatPlacement(item.placing)}
                     </span>
                   </td>
@@ -154,7 +223,11 @@ function MobileHistory({ history }) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getPlacementTone(item.placing)}`}>
+              <span
+                className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getPlacementTone(
+                  item.placing
+                )}`}
+              >
                 {formatPlacement(item.placing)}
               </span>
 
@@ -183,7 +256,6 @@ export default function PlayerDetailPage() {
         setError('');
 
         const API_URL = import.meta.env.VITE_API_URL || '';
-
         const response = await fetch(`${API_URL}/api/league/overview`);
 
         if (!response.ok) {
@@ -217,6 +289,8 @@ export default function PlayerDetailPage() {
     () => getMostPlayedDeck(history, player?.lastDeckName),
     [history, player]
   );
+  const totals = useMemo(() => getRecordTotals(history), [history]);
+  const winRate = useMemo(() => getWinRate(totals), [totals]);
 
   if (loading) {
     return (
@@ -241,13 +315,14 @@ export default function PlayerDetailPage() {
   if (!player) {
     return (
       <section>
-        <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-6">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6">
           <p className="text-slate-300">No se encontró el jugador.</p>
 
           <Link
             to="/ranking"
-            className="mt-4 inline-flex rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/50 hover:text-white"
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/50 hover:text-white"
           >
+            <FiArrowLeft size={16} />
             Volver al ranking
           </Link>
         </div>
@@ -256,55 +331,156 @@ export default function PlayerDetailPage() {
   }
 
   return (
-    <section>
-      <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-5 sm:p-6">
-        <Link
-          to="/ranking"
-          className="inline-flex rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/50 hover:text-white"
-        >
-          Volver al ranking
-        </Link>
+    <section className="space-y-8">
+      <div className="overflow-hidden rounded-[28px] border border-slate-800 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.10),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.10),_transparent_28%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(3,7,18,0.98))] p-5 sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link
+            to="/ranking"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/90 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/50 hover:text-white"
+          >
+            <FiArrowLeft size={16} />
+            Volver al ranking
+          </Link>
 
-        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="hidden rounded-full border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-300 sm:inline-flex">
+            Jugador #{player.rank}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
           <div>
-            <h1 className="text-2xl font-bold text-white sm:text-3xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-300/80">
+              Perfil del jugador
+            </p>
+
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
               {player.name}
             </h1>
-            <p className="mt-2 text-sm text-slate-400">
-              ID: {player.limitlessPlayerId}
+
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
+              Resumen general del jugador en la liga, con sus métricas principales,
+              desempeño histórico y mazo más utilizado.
             </p>
-            <p className="mt-1 text-sm text-slate-400">
-              País: {player.country || '-'}
-            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <TopBadge label="Puesto actual" value={`#${player.rank}`} tone="cyan" />
+              <TopBadge
+                label="Torneos jugados"
+                value={player.tournamentsPlayed || 0}
+                tone="emerald"
+              />
+              <TopBadge
+                label="Torneos ganados"
+                value={player.firstPlaces || 0}
+                tone="amber"
+              />
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Dato destacado
+              </p>
+
+              <p className="mt-3 text-lg font-semibold text-white">
+                Mazo más jugado: <span className="text-cyan-300">{mostPlayedDeck}</span>
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="inline-flex rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-300">
+                  Mejor posición: {bestFinish.placing ? formatPlacement(bestFinish.placing) : '-'}
+                </span>
+
+                <span className="inline-flex rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-300">
+                  Ratio: {winRate}
+                </span>
+
+                <span className="inline-flex rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-300">
+                  Record: {totals.wins}-{totals.losses}-{totals.ties}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="inline-flex w-fit rounded-full bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-300">
-            Ranking actual: {player.rank}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-fuchsia-400/90">
+              Panel actual
+            </p>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <LeagueStatCard
+                label="Ranking"
+                value={`#${player.rank}`}
+              />
+
+              <LeagueStatCard
+                label="Mejor posición"
+                value={bestFinish.placing ? formatPlacement(bestFinish.placing) : '-'}
+                subtitle={
+                  bestFinish.date ? `Alcanzada el ${formatDate(bestFinish.date)}` : ''
+                }
+              />
+
+              <LeagueStatCard
+                label="Ratio de victorias"
+                value={winRate}
+                subtitle={`${totals.wins} victorias · ${totals.losses} derrotas · ${totals.ties} empates`}
+                wide
+              />
+
+              <LeagueStatCard
+                label="Mazo más jugado"
+                value={mostPlayedDeck}
+                wide
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold text-white">Varios datos</h2>
+      <div className="rounded-[28px] border border-slate-800 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_transparent_24%),linear-gradient(180deg,rgba(2,6,23,0.96),rgba(2,6,23,0.98))] p-5 sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-300/75">
+              Resumen histórico
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+              Datos destacados
+            </h2>
+          </div>
+        </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <StatCard label="Ranking actual" value={player.rank} />
-          <StatCard label="Total de torneos jugados" value={player.tournamentsPlayed} />
-          <StatCard label="Total de torneos ganados" value={player.firstPlaces} />
-          <StatCard label="Mazo más jugado" value={mostPlayedDeck} />
-          <StatCard
-            label="Mejor posición alcanzada"
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <SummaryStatCard
+            label="Torneos jugados"
+            value={player.tournamentsPlayed || 0}
+          />
+
+          <SummaryStatCard
+            label="Torneos ganados"
+            value={player.firstPlaces || 0}
+          />
+
+          <SummaryStatCard
+            label="Mejor posición"
             value={bestFinish.placing ? formatPlacement(bestFinish.placing) : '-'}
+            subtitle={bestFinish.date ? `Alcanzada el ${formatDate(bestFinish.date)}` : ''}
           />
-          <StatCard
-            label="Fecha de la mejor posición"
-            value={bestFinish.date ? formatDate(bestFinish.date) : '-'}
+
+          <SummaryStatCard
+            label="Victorias / derrotas / empates"
+            value={`${totals.wins} / ${totals.losses} / ${totals.ties}`}
+            subtitle={`Win rate: ${winRate}`}
+          />
+
+          <SummaryStatCard
+            label="Mazo más jugado"
+            value={mostPlayedDeck}
           />
         </div>
       </div>
 
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold text-white">Histórico</h2>
+      <div>
+        <h2 className="text-xl font-semibold text-white">Histórico detallado</h2>
         <p className="mt-1 text-sm text-slate-400">
           Acá ves todos los torneos jugados por el jugador.
         </p>

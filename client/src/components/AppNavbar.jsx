@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FiAward, FiList, FiLayers, FiMenu, FiX } from 'react-icons/fi';
 import { NavLink, useLocation } from 'react-router-dom';
+import logoLiga from '/logo.png'; // cambiá la ruta si hace falta
 
 const navItems = [
   {
@@ -57,8 +58,12 @@ export default function AppNavbar() {
       <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
           <NavLink to="/ranking" className="flex items-center gap-3">
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/15 text-cyan-300">
-              <FiAward size={18} />
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-cyan-400/10">
+              <img
+                src={logoLiga}
+                alt="Liga Catamarca"
+                className="h-full w-full object-contain"
+              />
             </div>
 
             <div>
@@ -99,14 +104,24 @@ export default function AppNavbar() {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-50 h-full w-[290px] max-w-[85vw] border-r border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-300 md:hidden ${
-          open ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed right-0 top-0 z-50 h-full w-[290px] max-w-[85vw] border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-300 md:hidden ${
+          open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
-          <div>
-            <p className="text-sm font-semibold text-white">Menú</p>
-            <p className="text-xs text-slate-500">Liga Catamarca</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-cyan-400/10">
+              <img
+                src={logoLiga}
+                alt="Liga Catamarca"
+                className="h-full w-full object-contain"
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-white">Menú</p>
+              <p className="text-xs text-slate-500">Liga Catamarca</p>
+            </div>
           </div>
 
           <button
