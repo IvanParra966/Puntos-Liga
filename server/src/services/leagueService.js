@@ -156,6 +156,7 @@ export const syncCatamarcaLeague = async () => {
             matchesPlayed,
             pointsAwarded,
             droppedAtRound: standing.drop ?? null,
+            deckName: standing.deck?.name || null,
           });
 
           savedResults += 1;
@@ -258,6 +259,7 @@ export const getLeagueOverview = async () => {
       ties: result.ties,
       matchesPlayed: result.matchesPlayed,
       pointsAwarded: result.pointsAwarded,
+      deckName: result.deckName || null,
     });
 
     totalMatches += result.matchesPlayed;
@@ -265,11 +267,18 @@ export const getLeagueOverview = async () => {
   }
 
   const leaderboard = Array.from(leaderboardMap.values())
-    .map((row) => ({
-      ...row,
-      averagePlacing: row.tournamentsPlayed ? Number((row.totalPlacings / row.tournamentsPlayed).toFixed(2)) : null,
-      history: row.history.sort((a, b) => new Date(b.date) - new Date(a.date)),
-    }))
+    .map((row) => {
+      const sortedHistory = row.history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      return {
+        ...row,
+        averagePlacing: row.tournamentsPlayed
+          ? Number((row.totalPlacings / row.tournamentsPlayed).toFixed(2))
+          : null,
+        history: sortedHistory,
+        lastDeckName: sortedHistory[0]?.deckName || null,
+      };
+    })
     .sort((a, b) => {
       if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
       if (b.firstPlaces !== a.firstPlaces) return b.firstPlaces - a.firstPlaces;

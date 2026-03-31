@@ -7,8 +7,40 @@ const api = axios.create({
   timeout: 30000,
 });
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRetryDelay = (error, attempt) => {
+  const retryAfterHeader = error?.response?.headers?.['retry-after'];
+  const retryAfterSeconds = Number(retryAfterHeader);
+
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    return retryAfterSeconds * 1000;
+  }
+
+  return Math.min(1000 * (attempt + 1), 10000);
+};
+
+const getWithRetry = async (url, config = {}, attempt = 0) => {
+  try {
+    const response = await api.get(url, config);
+    await sleep(500);
+    return response;
+  } catch (error) {
+    const status = error?.response?.status;
+
+    if (status === 429 && attempt < 5) {
+      const delay = getRetryDelay(error, attempt);
+      console.warn(`Limitless respondió 429 en ${url}. Reintentando en ${delay}ms...`);
+      await sleep(delay);
+      return getWithRetry(url, config, attempt + 1);
+    }
+
+    throw error;
+  }
+};
+
 export const fetchTournamentsPage = async (page = 1) => {
-  const response = await api.get('/tournaments', {
+  const response = await getWithRetry('/tournaments', {
     params: {
       game: env.limitless.game,
       organizerId: env.limitless.organizerId,
@@ -47,6 +79,6 @@ export const fetchAllCatamarcaTournaments = async () => {
 };
 
 export const fetchTournamentStandings = async (tournamentId) => {
-  const response = await api.get(`/tournaments/${tournamentId}/standings`);
+  const response = await getWithRetry(`/tournaments/${tournamentId}/standings`);
   return Array.isArray(response.data) ? response.data : [];
 };

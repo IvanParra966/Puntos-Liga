@@ -40,6 +40,10 @@ export const defineTournamentResult = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    deckName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   }, {
     tableName: 'tournament_results',
     indexes: [
