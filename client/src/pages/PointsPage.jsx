@@ -31,7 +31,10 @@ export default function PointsPage() {
         setLoading(true);
         setError('');
 
-        const response = await fetch('/api/league/overview');
+        const API_URL = import.meta.env.VITE_API_URL || '';
+
+        const response = await fetch(`${API_URL}/api/league/overview`);
+
         if (!response.ok) {
           throw new Error('No se pudieron cargar los puntos.');
         }
