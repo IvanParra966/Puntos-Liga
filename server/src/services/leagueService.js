@@ -23,6 +23,7 @@ import {
   getSeasonByKey,
 } from './seasonService.js';
 import { makeTournamentShortName } from '../utils/text.js';
+
 const sortRules = (rules = []) => {
   return [...rules].sort((a, b) => {
     if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
@@ -30,17 +31,17 @@ const sortRules = (rules = []) => {
     if ((a.maxPlayers || 999999) !== (b.maxPlayers || 999999)) {
       return (a.maxPlayers || 999999) - (b.maxPlayers || 999999);
     }
-    if (a.placingFrom !== b.placingFrom) return a.placingFrom -
-      b.placingFrom;
+    if (a.placingFrom !== b.placingFrom) return a.placingFrom - b.placingFrom;
     return a.placingTo - b.placingTo;
   });
 };
+
 const getPointRulesCollection = async (transaction = null) => {
   const rules = await PointRule.findAll({
-    order: [['sortOrder', 'ASC'], ['minPlayers', 'ASC'], ['placingFrom',
-      'ASC']],
+    order: [['sortOrder', 'ASC'], ['minPlayers', 'ASC'], ['placingFrom', 'ASC']],
     transaction: transaction || undefined,
   });
+
   return rules.map((rule) => ({
     id: rule.id,
     label: rule.label,
@@ -52,37 +53,47 @@ const getPointRulesCollection = async (transaction = null) => {
     sortOrder: rule.sortOrder,
   }));
 };
+
 const resolvePoints = (playersCount, placing, rules = []) => {
   const safePlayersCount = Number(playersCount || 0);
   const safePlacing = Number(placing || 0);
+
   const matchedRule = rules.find((rule) => {
     const matchesPlayers =
       safePlayersCount >= Number(rule.minPlayers) &&
-      (rule.maxPlayers === null || safePlayersCount <=
-        Number(rule.maxPlayers));
+      (rule.maxPlayers === null || safePlayersCount <= Number(rule.maxPlayers));
+
     const matchesPlacing =
       safePlacing >= Number(rule.placingFrom) &&
       safePlacing <= Number(rule.placingTo);
+
     return matchesPlayers && matchesPlacing;
   });
+
   return matchedRule ? Number(matchedRule.points) : 0;
 };
+
 const updateSyncState = async (values) => {
   const [syncState] = await SyncState.findOrCreate({
     where: { syncKey: 'catamarca' },
     defaults: { status: 'idle' },
   });
+
   await syncState.update(values);
   return syncState;
 };
+
 const recalculateStoredPoints = async (transaction) => {
   const rules = await getPointRulesCollection(transaction);
+
   const results = await TournamentResult.findAll({
     include: [{ model: Tournament, as: 'tournament' }],
     transaction,
   });
+
   for (const result of results) {
     const playersCount = Number(result.tournament?.playersCount || 0);
+
     await result.update(
       {
         pointsAwarded: resolvePoints(playersCount, result.placing, rules),
@@ -91,16 +102,42 @@ const recalculateStoredPoints = async (transaction) => {
     );
   }
 };
+
 const normalizeMatchResultType = (winner) => {
   if (winner === 0 || winner === '0') return 'tie';
   if (winner === -1 || winner === '-1') return 'double-loss';
-  if (winner === null || winner === undefined || winner === '') return
-  'pending';
+  if (winner === null || winner === undefined || winner === '') return 'pending';
   return 'decided';
 };
+
+const buildTournamentBucket = (source = {}) => {
+  return {
+    internalId: source.id || null,
+    id: source.limitlessTournamentId || source.tournamentId || source.id || null,
+    name: source.name || '-',
+    shortName: source.shortName || '-',
+    date: source.date || null,
+    playersCount: Number(source.playersCount || 0),
+    seasonKey: source.seasonKey || null,
+    seasonYear: source.seasonYear || null,
+    seasonNumber: source.seasonNumber || null,
+    standings: [],
+    pairings: [],
+  };
+};
+
+const ensureTournamentBucket = (map, key, source = {}) => {
+  if (!map.has(key)) {
+    map.set(key, buildTournamentBucket(source));
+  }
+
+  return map.get(key);
+};
+
 const buildOverviewFromResults = ({
   tournaments = [],
   results = [],
+  matches = [],
   season = null,
   seasons = [],
   syncState = null,
@@ -109,8 +146,10 @@ const buildOverviewFromResults = ({
   const leaderboardMap = new Map();
   let totalMatches = 0;
   let totalPointsAwarded = 0;
+
   for (const result of results) {
     const playerId = result.player.id;
+
     if (!leaderboardMap.has(playerId)) {
       leaderboardMap.set(playerId, {
         playerId,
@@ -126,16 +165,19 @@ const buildOverviewFromResults = ({
         history: [],
       });
     }
+
     const row = leaderboardMap.get(playerId);
+
     row.totalPoints += result.pointsAwarded;
     row.tournamentsPlayed += 1;
     row.matchesPlayed += result.matchesPlayed;
     row.totalPlacings += result.placing;
-    row.bestFinish = row.bestFinish === null ? result.placing :
-      Math.min(row.bestFinish, result.placing);
+    row.bestFinish = row.bestFinish === null ? result.placing : Math.min(row.bestFinish, result.placing);
+
     if (result.placing === 1) {
       row.firstPlaces += 1;
     }
+
     row.history.push({
       seasonKey: result.tournament.seasonKey,
       seasonNumber: result.tournament.seasonNumber,
@@ -155,13 +197,15 @@ const buildOverviewFromResults = ({
       deckTypeId: result.deckTypeId || null,
       decklistJson: result.decklistJson || null,
     });
+
     totalMatches += result.matchesPlayed;
     totalPointsAwarded += result.pointsAwarded;
   }
+
   const leaderboard = Array.from(leaderboardMap.values())
     .map((row) => {
-      const sortedHistory = row.history.sort((a, b) => new Date(b.date) -
-        new Date(a.date));
+      const sortedHistory = row.history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
       return {
         ...row,
         averagePlacing: row.tournamentsPlayed
@@ -172,12 +216,9 @@ const buildOverviewFromResults = ({
       };
     })
     .sort((a, b) => {
-      if (b.totalPoints !== a.totalPoints) return b.totalPoints -
-        a.totalPoints;
-      if (b.firstPlaces !== a.firstPlaces) return b.firstPlaces -
-        a.firstPlaces;
-      if (b.tournamentsPlayed !== a.tournamentsPlayed) return
-      b.tournamentsPlayed - a.tournamentsPlayed;
+      if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+      if (b.firstPlaces !== a.firstPlaces) return b.firstPlaces - a.firstPlaces;
+      if (b.tournamentsPlayed !== a.tournamentsPlayed) return b.tournamentsPlayed - a.tournamentsPlayed;
       if ((a.averagePlacing || 999) !== (b.averagePlacing || 999)) {
         return (a.averagePlacing || 999) - (b.averagePlacing || 999);
       }
@@ -187,17 +228,85 @@ const buildOverviewFromResults = ({
       ...row,
       rank: index + 1,
     }));
+
+  const tournamentMap = new Map();
+
+  tournaments.forEach((tournament) => {
+    const key = String(tournament.id);
+    ensureTournamentBucket(tournamentMap, key, tournament);
+  });
+
+  results.forEach((result) => {
+    const tournamentRecord = result.tournament;
+    const tournamentKey = String(tournamentRecord?.id || result.tournamentId);
+    const bucket = ensureTournamentBucket(tournamentMap, tournamentKey, tournamentRecord);
+
+    bucket.standings.push({
+      id: result.id,
+      player: result.player.limitlessPlayerId,
+      name: result.player.displayName,
+      country: result.player.country,
+      placing: result.placing,
+      wins: result.wins,
+      losses: result.losses,
+      ties: result.ties,
+      matchesPlayed: result.matchesPlayed,
+      pointsAwarded: result.pointsAwarded,
+      deck: {
+        id: result.deckTypeId || null,
+        name: result.deckName || null,
+      },
+      decklist: result.decklistJson || null,
+    });
+  });
+
+  matches.forEach((match) => {
+    const tournamentRecord = match.tournament;
+    const tournamentKey = String(tournamentRecord?.id || match.tournamentId);
+    const bucket = ensureTournamentBucket(tournamentMap, tournamentKey, tournamentRecord);
+
+    bucket.pairings.push({
+      id: match.id,
+      round: match.round,
+      phase: match.phase,
+      table: match.tableNumber,
+      match: match.matchLabel,
+      player1: match.player1LimitlessId,
+      player2: match.player2LimitlessId,
+      winner: match.winnerLimitlessId,
+      resultType: match.resultType,
+    });
+  });
+
+  const tournamentsPayload = Array.from(tournamentMap.values())
+    .map((tournament) => ({
+      ...tournament,
+      standings: [...tournament.standings].sort(
+        (a, b) => Number(a.placing || 9999) - Number(b.placing || 9999)
+      ),
+      pairings: [...tournament.pairings].sort((a, b) => {
+        if (Number(a.round || 0) !== Number(b.round || 0)) {
+          return Number(a.round || 0) - Number(b.round || 0);
+        }
+        if (Number(a.phase || 0) !== Number(b.phase || 0)) {
+          return Number(a.phase || 0) - Number(b.phase || 0);
+        }
+        return Number(a.table || 0) - Number(b.table || 0);
+      }),
+    }))
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
   return {
     season: season
       ? {
-        id: season.id,
-        key: season.key,
-        name: season.name,
-        year: season.year,
-        seasonNumber: season.seasonNumber,
-        startsAt: season.startsAt,
-        endsAt: season.endsAt,
-      }
+          id: season.id,
+          key: season.key,
+          name: season.name,
+          year: season.year,
+          seasonNumber: season.seasonNumber,
+          startsAt: season.startsAt,
+          endsAt: season.endsAt,
+        }
       : null,
     seasons: seasons.map((item) => ({
       id: item.id,
@@ -221,69 +330,65 @@ const buildOverviewFromResults = ({
       syncMessage: syncState?.message || null,
       lastPayload: syncState?.payload || null,
     },
-    tournaments: tournaments.map((tournament) => ({
-      id: tournament.limitlessTournamentId,
-      name: tournament.name,
-      shortName: tournament.shortName,
-      date: tournament.date,
-      playersCount: tournament.playersCount,
-      seasonKey: tournament.seasonKey,
-      seasonYear: tournament.seasonYear,
-      seasonNumber: tournament.seasonNumber,
-    })),
+    tournaments: tournamentsPayload,
     rules,
     leaderboard,
   };
 };
+
 const getResultsWhereBySeasonParam = async (seasonParam) => {
   if (!seasonParam || seasonParam === 'active') {
     const activeSeason = await getActiveSeason();
+
     return {
       season: activeSeason,
-      tournamentWhere: activeSeason ? { seasonId: activeSeason.id } : {
-        id:
-          null
-      },
+      tournamentWhere: activeSeason ? { seasonId: activeSeason.id } : { id: null },
     };
   }
+
   if (seasonParam === 'all') {
     return {
       season: null,
       tournamentWhere: {},
     };
   }
+
   const selectedSeason = await getSeasonByKey(seasonParam);
+
   return {
     season: selectedSeason,
-    tournamentWhere: selectedSeason ? { seasonId: selectedSeason.id } : {
-      id: null
-    },
+    tournamentWhere: selectedSeason ? { seasonId: selectedSeason.id } : { id: null },
   };
 };
+
 export const syncCatamarcaLeague = async () => {
   await bootstrapSeasons();
+
   await updateSyncState({
     status: 'running',
     message: 'Sincronizando torneos de Catamarca...',
     startedAt: new Date(),
   });
+
   try {
     const rules = await getPointRulesCollection();
     const tournaments = await fetchAllCatamarcaTournaments();
+
     let savedResults = 0;
     let savedMatches = 0;
     const skipped = [];
+
     for (const tournamentData of tournaments) {
       try {
         const standings = await fetchTournamentStandings(tournamentData.id);
         const pairings = await fetchTournamentPairings(tournamentData.id);
-        const playersCount = Number(tournamentData.players ||
-          standings.length || 0);
-        const season = await
-          findSeasonForTournamentDate(tournamentData.date);
+        const playersCount = Number(tournamentData.players || standings.length || 0);
+        const season = await findSeasonForTournamentDate(tournamentData.date);
+
         let tournamentRecord = await Tournament.findOne({
           where: { limitlessTournamentId: tournamentData.id },
         });
+
         const baseTournamentPayload = {
           organizerId: tournamentData.organizerId,
           game: tournamentData.game,
@@ -298,6 +403,7 @@ export const syncCatamarcaLeague = async () => {
           seasonYear: season?.year || null,
           seasonNumber: season?.seasonNumber || null,
         };
+
         if (tournamentRecord) {
           await tournamentRecord.update(baseTournamentPayload);
         } else {
@@ -306,18 +412,15 @@ export const syncCatamarcaLeague = async () => {
             ...baseTournamentPayload,
           });
         }
+
         await TournamentResult.destroy({
-          where: {
-            tournamentId:
-              tournamentRecord.id
-          }
+          where: { tournamentId: tournamentRecord.id },
         });
+
         await TournamentMatch.destroy({
-          where: {
-            tournamentId:
-              tournamentRecord.id
-          }
+          where: { tournamentId: tournamentRecord.id },
         });
+
         for (const standing of standings) {
           const wins = Number(standing?.record?.wins || 0);
           const losses = Number(standing?.record?.losses || 0);
@@ -325,6 +428,7 @@ export const syncCatamarcaLeague = async () => {
           const matchesPlayed = wins + losses + ties;
           const placing = Number(standing.placing || 0);
           const pointsAwarded = resolvePoints(playersCount, placing, rules);
+
           const [player] = await Player.findOrCreate({
             where: { limitlessPlayerId: standing.player },
             defaults: {
@@ -333,10 +437,12 @@ export const syncCatamarcaLeague = async () => {
               country: standing.country || null,
             },
           });
+
           await player.update({
             displayName: standing.name || player.displayName,
             country: standing.country || player.country,
           });
+
           await TournamentResult.create({
             tournamentId: tournamentRecord.id,
             playerId: player.id,
@@ -351,8 +457,10 @@ export const syncCatamarcaLeague = async () => {
             deckTypeId: standing.deck?.id || null,
             decklistJson: standing.decklist || null,
           });
+
           savedResults += 1;
         }
+
         for (const pairing of pairings) {
           await TournamentMatch.create({
             tournamentId: tournamentRecord.id,
@@ -369,6 +477,7 @@ export const syncCatamarcaLeague = async () => {
                 : String(pairing.winner),
             resultType: normalizeMatchResultType(pairing.winner),
           });
+
           savedMatches += 1;
         }
       } catch (error) {
@@ -379,6 +488,7 @@ export const syncCatamarcaLeague = async () => {
         });
       }
     }
+
     const payload = {
       tournaments: tournaments.length,
       results: savedResults,
@@ -388,13 +498,14 @@ export const syncCatamarcaLeague = async () => {
       organizerId: env.limitless.organizerId,
       game: env.limitless.game,
     };
+
     await updateSyncState({
       status: 'success',
-      message: `Sincronización finalizada. ${tournaments.length} torneos
-revisados.`,
+      message: `Sincronización finalizada. ${tournaments.length} torneos revisados.`,
       finishedAt: new Date(),
       payload,
     });
+
     return payload;
   } catch (error) {
     await updateSyncState({
@@ -403,48 +514,69 @@ revisados.`,
       finishedAt: new Date(),
       payload: { stack: error.stack },
     });
+
     throw error;
   }
 };
+
 export const getLeagueOverview = async (seasonParam = 'active') => {
   await bootstrapSeasons();
-  const { season, tournamentWhere } = await
-    getResultsWhereBySeasonParam(seasonParam);
-  const [tournaments, results, syncState, rules, seasons] = await
-    Promise.all([
-      Tournament.findAll({
-        where: tournamentWhere,
-        order: [['date', 'DESC']],
-      }),
-      TournamentResult.findAll({
-        include: [
-          { model: Player, as: 'player' },
-          {
-            model: Tournament,
-            as: 'tournament',
-            where: tournamentWhere,
-          },
-        ],
-        order: [
-          [{ model: Tournament, as: 'tournament' }, 'date', 'DESC'],
-          ['placing', 'ASC'],
-        ],
-      }),
-      SyncState.findOne({ where: { syncKey: 'catamarca' } }),
-      getPointRulesCollection(),
-      getAllSeasons(),
-    ]);
+
+  const { season, tournamentWhere } = await getResultsWhereBySeasonParam(seasonParam);
+
+  const [tournaments, results, matches, syncState, rules, seasons] = await Promise.all([
+    Tournament.findAll({
+      where: tournamentWhere,
+      order: [['date', 'ASC']],
+    }),
+    TournamentResult.findAll({
+      include: [
+        { model: Player, as: 'player' },
+        {
+          model: Tournament,
+          as: 'tournament',
+          where: tournamentWhere,
+        },
+      ],
+      order: [
+        [{ model: Tournament, as: 'tournament' }, 'date', 'ASC'],
+        ['placing', 'ASC'],
+      ],
+    }),
+    TournamentMatch.findAll({
+      include: [
+        {
+          model: Tournament,
+          as: 'tournament',
+          where: tournamentWhere,
+        },
+      ],
+      order: [
+        [{ model: Tournament, as: 'tournament' }, 'date', 'ASC'],
+        ['round', 'ASC'],
+        ['phase', 'ASC'],
+        ['tableNumber', 'ASC'],
+      ],
+    }),
+    SyncState.findOne({ where: { syncKey: 'catamarca' } }),
+    getPointRulesCollection(),
+    getAllSeasons(),
+  ]);
+
   return buildOverviewFromResults({
     tournaments,
     results,
+    matches,
     season,
     seasons,
     syncState,
     rules,
   });
 };
+
 export const getSeasonsOverview = async () => {
   await bootstrapSeasons();
+
   const seasons = await Season.findAll({
     include: [
       {
@@ -458,11 +590,14 @@ export const getSeasonsOverview = async () => {
       ['seasonNumber', 'DESC'],
     ],
   });
+
   const activeSeason = await getActiveSeason();
   const payload = [];
+
   for (const season of seasons) {
     const overview = await getLeagueOverview(season.key);
     const winner = overview.leaderboard[0] || null;
+
     payload.push({
       id: season.id,
       key: season.key,
@@ -476,13 +611,14 @@ export const getSeasonsOverview = async () => {
       playersCount: overview.summary.playersCount,
       winner: winner
         ? {
-          playerId: winner.playerId,
-          name: winner.name,
-          totalPoints: winner.totalPoints,
-        }
+            playerId: winner.playerId,
+            name: winner.name,
+            totalPoints: winner.totalPoints,
+          }
         : null,
     });
   }
+
   return payload;
 };
 
@@ -507,7 +643,6 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
   }
 
   const basePlayer = historicalPlayer || currentPlayer;
-
   const playerLimitlessId = String(basePlayer.limitlessPlayerId);
 
   const playerMatches = await TournamentMatch.findAll({
@@ -544,12 +679,12 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
 
   const opponentPlayers = opponentLimitlessIds.length
     ? await Player.findAll({
-      where: {
-        limitlessPlayerId: {
-          [Op.in]: opponentLimitlessIds,
+        where: {
+          limitlessPlayerId: {
+            [Op.in]: opponentLimitlessIds,
+          },
         },
-      },
-    })
+      })
     : [];
 
   const opponentMap = new Map(
@@ -602,14 +737,14 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
     },
     activeSeason: activeSeason
       ? {
-        id: activeSeason.id,
-        key: activeSeason.key,
-        name: activeSeason.name,
-        year: activeSeason.year,
-        seasonNumber: activeSeason.seasonNumber,
-        startsAt: activeSeason.startsAt,
-        endsAt: activeSeason.endsAt,
-      }
+          id: activeSeason.id,
+          key: activeSeason.key,
+          name: activeSeason.name,
+          year: activeSeason.year,
+          seasonNumber: activeSeason.seasonNumber,
+          startsAt: activeSeason.startsAt,
+          endsAt: activeSeason.endsAt,
+        }
       : null,
     seasons: seasons.map((season) => ({
       id: season.id,
@@ -630,13 +765,15 @@ export const getPointRules = async () => {
   const rules = await getPointRulesCollection();
   return sortRules(rules);
 };
+
 export const savePointRules = async (rules = []) => {
   const transaction = await sequelize.transaction();
+
   try {
     await PointRule.destroy({ where: {}, transaction });
+
     const payload = sortRules(rules)
-      .filter((rule) => Number(rule.placingFrom) > 0 &&
-        Number(rule.placingTo) > 0)
+      .filter((rule) => Number(rule.placingFrom) > 0 && Number(rule.placingTo) > 0)
       .map((rule, index) => ({
         label: rule.label || 'Regla personalizada',
         minPlayers: Number(rule.minPlayers || 1),
@@ -649,14 +786,17 @@ export const savePointRules = async (rules = []) => {
         points: Number(rule.points || 0),
         sortOrder: Number(rule.sortOrder || index + 1),
       }));
+
     if (payload.length) {
       await PointRule.bulkCreate(payload, { transaction });
     }
+
     await recalculateStoredPoints(transaction);
     await transaction.commit();
+
     return getPointRules();
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
-}
+};

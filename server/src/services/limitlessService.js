@@ -81,7 +81,7 @@ export const fetchAllCatamarcaTournaments = async () => {
 };
 
 export const fetchTournamentStandings = async (tournamentId) => {
-  const response = await getWithRetry(`/tournaments/${tournamentId}/standings`);
+  const response = await getWithRetry(`/tournaments/${tournamentId}/standings`  );
   return Array.isArray(response.data) ? response.data : [];
 };
 
