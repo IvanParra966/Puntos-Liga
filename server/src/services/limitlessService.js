@@ -66,12 +66,14 @@ export const fetchAllCatamarcaTournaments = async () => {
 
     if (currentPage.length < env.limitless.pageSize) {
       break;
-    }
+      }
   }
 
   return tournaments.filter((tournament) => {
     const sameOrganizer = Number(tournament.organizerId) === Number(env.limitless.organizerId);
-    const sameGame = String(tournament.game || '').toUpperCase() === String(env.limitless.game).toUpperCase();
+    const sameGame =
+      String(tournament.game || '').toUpperCase() ===
+      String(env.limitless.game).toUpperCase();
     const hasKeyword = includesKeyword(tournament.name, env.limitless.keyword);
 
     return sameOrganizer && sameGame && hasKeyword;
@@ -80,5 +82,10 @@ export const fetchAllCatamarcaTournaments = async () => {
 
 export const fetchTournamentStandings = async (tournamentId) => {
   const response = await getWithRetry(`/tournaments/${tournamentId}/standings`);
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+export const fetchTournamentPairings = async (tournamentId) => {
+  const response = await getWithRetry(`/tournaments/${tournamentId}/pairings`);
   return Array.isArray(response.data) ? response.data : [];
 };

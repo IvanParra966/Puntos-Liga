@@ -15,6 +15,7 @@ const toNumber = (value, fallback) => {
 export const env = {
   port: toNumber(process.env.PORT, 4000),
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  timezone: process.env.APP_TIMEZONE || 'America/Argentina/Catamarca',
   db: {
     host: process.env.DB_HOST || 'localhost',
     port: toNumber(process.env.DB_PORT, 3306),
