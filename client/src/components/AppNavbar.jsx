@@ -67,8 +67,7 @@ export default function AppNavbar() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold text-white">Liga Catamarca</p>
-              <p className="text-xs text-slate-500">Control de puntos</p>
+              <p className="font-storm text-3xl text-[#5aff5e]">VortexTCG</p>
             </div>
           </NavLink>
 
@@ -97,16 +96,14 @@ export default function AppNavbar() {
       </header>
 
       <div
-        className={`fixed inset-0 z-50 bg-slate-950/60 transition-opacity duration-300 md:hidden ${
-          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-        }`}
+        className={`fixed inset-0 z-40 bg-slate-950/60 transition-opacity duration-300 md:hidden ${open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          }`}
         onClick={() => setOpen(false)}
       />
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-full w-[290px] max-w-[85vw] border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-300 md:hidden ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed right-0 top-0 z-50 h-full w-[290px] max-w-[85vw] border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-300 md:hidden ${open ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
           <div className="flex items-center gap-3">

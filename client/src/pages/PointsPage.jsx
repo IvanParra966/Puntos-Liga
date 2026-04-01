@@ -1,23 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-const formatPlayersRange = (rule) => {
-  if (rule.maxPlayers === null || rule.maxPlayers === undefined) {
-    return `${rule.minPlayers}+ jugadores`;
+const getPlacementLabel = (rule) => {
+  if (rule.placingFrom === rule.placingTo) {
+    if (rule.placingFrom === 1) return '1st';
+    if (rule.placingFrom === 2) return '2nd';
+    if (rule.placingFrom === 3) return '3rd';
+    return `${rule.placingFrom}°`;
   }
 
-  if (rule.minPlayers === rule.maxPlayers) {
-    return `${rule.minPlayers} jugadores`;
-  }
-
-  return `${rule.minPlayers} a ${rule.maxPlayers} jugadores`;
+  return `Top ${rule.placingTo}`;
 };
 
-const formatPlacingRange = (rule) => {
-  if (rule.placingFrom === rule.placingTo) {
-    return `${rule.placingFrom}° puesto`;
+const getPlayersLabel = (items) => {
+  if (!items.length) return '';
+
+  const first = items[0];
+  if (first.maxPlayers === null || first.maxPlayers === undefined) {
+    return `(${first.minPlayers}+ jugadores)`;
   }
 
-  return `${rule.placingFrom}° al ${rule.placingTo}° puesto`;
+  if (first.minPlayers === first.maxPlayers) {
+    return `(${first.minPlayers} jugadores)`;
+  }
+
+  return `(hasta ${first.maxPlayers} jugadores)`;
 };
 
 export default function PointsPage() {
@@ -32,7 +38,6 @@ export default function PointsPage() {
         setError('');
 
         const API_URL = import.meta.env.VITE_API_URL || '';
-
         const response = await fetch(`${API_URL}/api/league/overview`);
 
         if (!response.ok) {
@@ -51,60 +56,101 @@ export default function PointsPage() {
     loadRules();
   }, []);
 
+  const groupedRules = useMemo(() => {
+    const groups = {};
+
+    for (const rule of rules) {
+      if (!groups[rule.label]) {
+        groups[rule.label] = [];
+      }
+      groups[rule.label].push(rule);
+    }
+
+    return Object.entries(groups).map(([label, items]) => ({
+      label,
+      items: [...items].sort((a, b) => a.placingFrom - b.placingFrom),
+    }));
+  }, [rules]);
+
   return (
-    <section>
-      <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 sm:p-6">
-        <h1 className="text-2xl font-bold text-white sm:text-3xl">Puntos</h1>
-        <p className="mt-2 text-sm text-slate-400">
-          Acá se muestran las reglas de puntuación de la liga.
+    <section className="space-y-6">
+      <div className="rounded-[28px] border border-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(3,7,18,0.98))] p-5 sm:p-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-300/80">
+          Sistema de liga
+        </p>
+
+        <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">
+          Sistema de puntos
+        </h1>
+
+        <p className="mt-2 max-w-2xl text-sm text-slate-400">
+          Consultá cómo se asignan los puntos según el tipo de torneo, la cantidad de jugadores y la posición final.
         </p>
       </div>
 
-      <div className="mt-5">
-        {loading ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-950/30 p-6 text-slate-300">
-            Cargando reglas...
-          </div>
-        ) : error ? (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-200">
-            {error}
-          </div>
-        ) : !rules.length ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-950/30 p-6 text-slate-400">
-            No hay reglas cargadas.
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/30">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-950/90 text-slate-300">
-                  <tr>
-                    <th className="px-4 py-4 text-left">Regla</th>
-                    <th className="px-4 py-4 text-left">Jugadores</th>
-                    <th className="px-4 py-4 text-left">Posiciones</th>
-                    <th className="px-4 py-4 text-left">Puntos</th>
-                  </tr>
-                </thead>
+      {loading ? (
+        <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-slate-300">
+          Cargando reglas...
+        </div>
+      ) : error ? (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-200">
+          {error}
+        </div>
+      ) : !groupedRules.length ? (
+        <div className="rounded-xl border border-slate-800 bg-slate-950/30 p-6 text-slate-400">
+          No hay reglas cargadas.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {groupedRules.map((group, index) => (
+            <div
+              key={group.label}
+              className="overflow-hidden rounded-[22px] border border-slate-800 bg-[linear-gradient(180deg,rgba(12,16,40,0.98),rgba(5,7,24,0.98))] shadow-[0_0_0_1px_rgba(34,211,238,0.03)]"
+            >
+              <div className="border-b border-slate-800/80 px-4 py-4 sm:px-5">
+                <h2
+                  className={`text-sm font-extrabold uppercase tracking-[0.04em] ${
+                    index === 1 ? 'text-emerald-400' : 'text-slate-200'
+                  }`}
+                >
+                  {group.label} {getPlayersLabel(group.items)}
+                </h2>
+              </div>
 
-                <tbody>
-                  {rules.map((rule) => (
-                    <tr key={rule.id} className="border-t border-slate-800 text-slate-200">
-                      <td className="px-4 py-4">{rule.label}</td>
-                      <td className="px-4 py-4">{formatPlayersRange(rule)}</td>
-                      <td className="px-4 py-4">{formatPlacingRange(rule)}</td>
-                      <td className="px-4 py-4">
-                        <span className="inline-flex rounded-full bg-cyan-400/15 px-3 py-1 font-semibold text-cyan-300">
-                          {rule.points}
-                        </span>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-white/[0.03] text-slate-300">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold sm:px-5">
+                        Posición
+                      </th>
+                      <th className="px-4 py-3 text-right font-semibold sm:px-5">
+                        Puntos
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody>
+                    {group.items.map((rule) => (
+                      <tr
+                        key={rule.id}
+                        className="border-t border-slate-800/70 text-slate-100"
+                      >
+                        <td className="px-4 py-4 font-semibold sm:px-5">
+                          {getPlacementLabel(rule)}
+                        </td>
+                        <td className="px-4 py-4 text-right font-extrabold sm:px-5">
+                          {rule.points}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
