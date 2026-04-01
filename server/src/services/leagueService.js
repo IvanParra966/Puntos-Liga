@@ -507,6 +507,7 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
   }
 
   const basePlayer = historicalPlayer || currentPlayer;
+
   const playerLimitlessId = String(basePlayer.limitlessPlayerId);
 
   const playerMatches = await TournamentMatch.findAll({
@@ -529,9 +530,38 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
     ],
   });
 
+  const opponentLimitlessIds = [
+    ...new Set(
+      playerMatches
+        .map((match) => {
+          const isPlayerOne = String(match.player1LimitlessId || '') === playerLimitlessId;
+          return isPlayerOne ? match.player2LimitlessId : match.player1LimitlessId;
+        })
+        .filter(Boolean)
+        .map((id) => String(id))
+    ),
+  ];
+
+  const opponentPlayers = opponentLimitlessIds.length
+    ? await Player.findAll({
+      where: {
+        limitlessPlayerId: {
+          [Op.in]: opponentLimitlessIds,
+        },
+      },
+    })
+    : [];
+
+  const opponentMap = new Map(
+    opponentPlayers.map((player) => [String(player.limitlessPlayerId), player])
+  );
+
   const filteredMatches = playerMatches.map((match) => {
     const isPlayerOne = String(match.player1LimitlessId || '') === playerLimitlessId;
     const opponentLimitlessId = isPlayerOne ? match.player2LimitlessId : match.player1LimitlessId;
+    const opponentPlayer = opponentLimitlessId
+      ? opponentMap.get(String(opponentLimitlessId))
+      : null;
 
     let result = 'PENDIENTE';
 
@@ -554,6 +584,8 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
       matchLabel: match.matchLabel,
       result,
       opponentLimitlessId: opponentLimitlessId || null,
+      opponentPlayerId: opponentPlayer?.id || null,
+      opponentName: opponentPlayer?.displayName || opponentLimitlessId || 'BYE / Sin rival',
       tournamentId: match.tournament?.limitlessTournamentId || null,
       tournamentName: match.tournament?.name || '-',
       shortName: match.tournament?.shortName || '-',
@@ -570,14 +602,14 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
     },
     activeSeason: activeSeason
       ? {
-          id: activeSeason.id,
-          key: activeSeason.key,
-          name: activeSeason.name,
-          year: activeSeason.year,
-          seasonNumber: activeSeason.seasonNumber,
-          startsAt: activeSeason.startsAt,
-          endsAt: activeSeason.endsAt,
-        }
+        id: activeSeason.id,
+        key: activeSeason.key,
+        name: activeSeason.name,
+        year: activeSeason.year,
+        seasonNumber: activeSeason.seasonNumber,
+        startsAt: activeSeason.startsAt,
+        endsAt: activeSeason.endsAt,
+      }
       : null,
     seasons: seasons.map((season) => ({
       id: season.id,
