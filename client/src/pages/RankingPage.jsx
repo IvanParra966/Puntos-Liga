@@ -293,7 +293,7 @@ function TournamentDetailModal({ open, onClose, tournament }) {
       onClick={onClose}
     >
       <div
-        className="max-h-[94vh] w-full max-w-6xl overflow-hidden rounded-[28px] border border-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.08),transparent_28%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(3,7,18,0.99))] shadow-[0_25px_80px_rgba(0,0,0,0.55)]"
+        className="max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-[28px] border border-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.08),transparent_28%),linear-gradient(180deg,rgba(2,6,23,0.98),rgba(3,7,18,0.99))] shadow-[0_25px_80px_rgba(0,0,0,0.55)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="border-b border-slate-800 p-4 sm:p-6">
@@ -329,8 +329,8 @@ function TournamentDetailModal({ open, onClose, tournament }) {
             </button>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
-            <div className="flex min-w-max gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-2">
+          <div className="mt-6">
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-2">
               {rounds.map((roundGroup, index) => {
                 const isActive = index === activeRound;
 
@@ -342,13 +342,13 @@ function TournamentDetailModal({ open, onClose, tournament }) {
                       setDirection(index > activeRound ? 1 : -1);
                       setActiveRound(index);
                     }}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition ${isActive
+                    className={`inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition sm:flex-none ${isActive
                         ? 'border border-cyan-400/30 bg-cyan-400/15 text-cyan-300 shadow-[0_8px_24px_rgba(34,211,238,0.10)]'
                         : 'border border-transparent bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white'
                       }`}
                   >
                     <span className="text-xs tracking-[0.2em]">R</span>
-                    <span>Ronda {roundGroup.round}</span>
+                    <span>{roundGroup.round}</span>
                     {isActive ? <FiChevronRight size={15} /> : null}
                   </button>
                 );
@@ -357,7 +357,7 @@ function TournamentDetailModal({ open, onClose, tournament }) {
           </div>
         </div>
 
-        <div className="max-h-[68vh] overflow-auto p-4 sm:p-6">
+        <div className="max-h-[68vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           {!currentRound ? (
             <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-400">
               Este torneo no tiene rondas disponibles.
@@ -366,8 +366,8 @@ function TournamentDetailModal({ open, onClose, tournament }) {
             <div
               key={`round-${currentRound.round}`}
               className={`space-y-3 transition-all duration-300 ${direction > 0
-                  ? 'animate-[slideInRight_0.28s_ease]'
-                  : 'animate-[slideInLeft_0.28s_ease]'
+                ? 'animate-[slideInRight_0.28s_ease]'
+                : 'animate-[slideInLeft_0.28s_ease]'
                 }`}
             >
               <div className="mb-5 flex items-center justify-between gap-3">
