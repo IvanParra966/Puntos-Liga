@@ -4,6 +4,7 @@ import RankingPage from './pages/RankingPage';
 import PointsPage from './pages/PointsPage';
 import LigasPage from './pages/LigasPage';
 import PlayerDetailPage from './pages/PlayerDetailPage';
+import KeywordsPage from './pages/KeywordsPage';
 export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="/ranking" element={<RankingPage />} />
           <Route path="/puntos" element={<PointsPage />} />
           <Route path="/ligas" element={<LigasPage />} />
+          <Route path="/keywords" element={<KeywordsPage />} />
           <Route path="/jugador/:playerId" element={<PlayerDetailPage />} />
         </Routes>
       </main>

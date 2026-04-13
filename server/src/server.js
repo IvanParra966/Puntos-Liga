@@ -2,7 +2,7 @@ import app from './app.js';
 import { env } from './config/env.js';
 import { ensureDatabaseExists, sequelize } from './config/database.js';
 import { syncModels } from './models/index.js';
-import { seedPointRules, seedSyncState } from './services/seedService.js';
+import { seedPointRules, seedSyncState, seedKeywords } from './services/seedService.js';
 import { syncCatamarcaLeague } from './services/leagueService.js';
 
 const startServer = async () => {
@@ -12,6 +12,7 @@ const startServer = async () => {
     await syncModels();
     await seedPointRules();
     await seedSyncState();
+    await seedKeywords();
 
     if (env.sync.onBoot) {
       try {

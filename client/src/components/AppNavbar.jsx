@@ -19,6 +19,11 @@ const navItems = [
     label: 'Ligas',
     icon: FiLayers,
   },
+  {
+    to: '/keywords',
+    label: 'Keywords',
+    icon: FiLayers,
+  },
 ];
 
 const getDesktopLinkClass = ({ isActive }) =>

@@ -6,6 +6,7 @@ import { defineTournamentMatch } from './TournamentMatch.js';
 import { defineSeason } from './Season.js';
 import { definePointRule } from './PointRule.js';
 import { defineSyncState } from './SyncState.js';
+import { defineKeyword } from './Keyword.js';
 
 export const Player = definePlayer(sequelize);
 export const Season = defineSeason(sequelize);
@@ -14,6 +15,7 @@ export const TournamentResult = defineTournamentResult(sequelize);
 export const TournamentMatch = defineTournamentMatch(sequelize);
 export const PointRule = definePointRule(sequelize);
 export const SyncState = defineSyncState(sequelize);
+export const Keyword = defineKeyword(sequelize);
 
 Season.hasMany(Tournament, {
   foreignKey: 'seasonId',
