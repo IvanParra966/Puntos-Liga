@@ -1,26 +1,53 @@
+import dotenv from 'dotenv';
 import mysql from 'mysql2/promise';
 import { Sequelize } from 'sequelize';
-import { env } from './env.js';
 
-export const ensureDatabaseExists = async () => {
+dotenv.config();
+
+export async function ensureDatabaseExists() {
   const connection = await mysql.createConnection({
-    host: env.db.host,
-    port: env.db.port,
-    user: env.db.user,
-    password: env.db.password,
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
   });
 
-  await connection.query(`CREATE DATABASE IF NOT EXISTS \`${env.db.name}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-  await connection.end();
-};
+  await connection.query(`
+    CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\`
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+  `);
 
-export const sequelize = new Sequelize(env.db.name, env.db.user, env.db.password, {
-  host: env.db.host,
-  port: env.db.port,
-  dialect: 'mysql',
-  logging: env.db.logging ? console.log : false,
-  define: {
-    underscored: true,
-    freezeTableName: false,
-  },
-});
+  await connection.end();
+}
+
+export const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 3306),
+    dialect: 'mysql',
+    timezone: '-03:00',
+    dialectOptions: {
+      timezone: '-03:00',
+    },
+    logging: false,
+    define: {
+      underscored: true,
+    },
+  }
+);
+
+export async function connectDatabase() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connected');
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
+  }
+}
+
+export default sequelize;

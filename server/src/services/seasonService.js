@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Season } from '../models/index.js';
+import { Season } from '../models/season.js';
 
 const DEFAULT_SEASONS_2026 = [
   {

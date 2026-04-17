@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-export const defineSeason = (sequelize) => {
-  const Season = sequelize.define(
+export const Season = sequelize.define(
     'Season',
     {
       id: {
@@ -44,6 +44,3 @@ export const defineSeason = (sequelize) => {
       tableName: 'seasons',
     }
   );
-
-  return Season;
-};

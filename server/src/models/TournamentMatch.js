@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-export const defineTournamentMatch = (sequelize) => {
-  const TournamentMatch = sequelize.define(
+export const TournamentMatch = sequelize.define(
     'TournamentMatch',
     {
       id: {
@@ -55,6 +55,3 @@ export const defineTournamentMatch = (sequelize) => {
       tableName: 'tournament_matches',
     }
   );
-
-  return TournamentMatch;
-};

@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-export const defineSyncState = (sequelize) => {
-  const SyncState = sequelize.define('SyncState', {
+export const SyncState = sequelize.define('SyncState', {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -36,6 +36,3 @@ export const defineSyncState = (sequelize) => {
   }, {
     tableName: 'sync_states',
   });
-
-  return SyncState;
-};

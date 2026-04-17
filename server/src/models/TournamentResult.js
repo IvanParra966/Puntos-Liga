@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-export const defineTournamentResult = (sequelize) => {
-  const TournamentResult = sequelize.define(
+export const TournamentResult = sequelize.define(
     'TournamentResult',
     {
       id: {
@@ -67,6 +67,3 @@ export const defineTournamentResult = (sequelize) => {
       tableName: 'tournament_results',
     }
   );
-
-  return TournamentResult;
-};

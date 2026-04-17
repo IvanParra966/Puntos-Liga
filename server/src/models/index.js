@@ -1,74 +1,81 @@
-import { sequelize } from '../config/database.js';
-import { definePlayer } from './Player.js';
-import { defineTournament } from './Tournament.js';
-import { defineTournamentResult } from './TournamentResult.js';
-import { defineTournamentMatch } from './TournamentMatch.js';
-import { defineSeason } from './Season.js';
-import { definePointRule } from './PointRule.js';
-import { defineSyncState } from './SyncState.js';
-import { defineKeyword } from './Keyword.js';
+import { User } from './users.js';
+import { Roles } from './roles.js';
+import { Status } from './status.js';
+import { OrganizationRoles } from './organizationRoles.js';
+import { OrganizationMembers } from './organizationMembers.js';
+import { OrganizationRequest } from './organizationRequests.js';
+import { Organization } from './organizations.js';
+/* Legacy */
+import { Player } from './player.js';
+import { Season } from './season.js';
+import { Tournament } from './tournament.js';
+import { TournamentResult } from './tournamentResult.js';
+import { TournamentMatch } from './tournamentMatch.js';
+import { PointRule } from './pointRule.js';
+import { SyncState } from './syncState.js';
+import { Keyword } from './keyword.js';
 
-export const Player = definePlayer(sequelize);
-export const Season = defineSeason(sequelize);
-export const Tournament = defineTournament(sequelize);
-export const TournamentResult = defineTournamentResult(sequelize);
-export const TournamentMatch = defineTournamentMatch(sequelize);
-export const PointRule = definePointRule(sequelize);
-export const SyncState = defineSyncState(sequelize);
-export const Keyword = defineKeyword(sequelize);
+/* roles - users */
+User.belongsTo(Roles, { foreignKey: 'roleId', as: 'role' });
+Roles.hasMany(User, { foreignKey: 'roleId', as: 'users' });
 
-Season.hasMany(Tournament, {
-  foreignKey: 'seasonId',
-  as: 'tournaments',
-});
+/* status - users */
+User.belongsTo(Status, { foreignKey: 'statusId', as: 'status' });
+Status.hasMany(User, { foreignKey: 'statusId', as: 'users' });
 
-Tournament.belongsTo(Season, {
-  foreignKey: 'seasonId',
-  as: 'season',
-});
+/* status - organizationMembers */
+OrganizationMembers.belongsTo(Status, { foreignKey: 'statusId', as: 'status' });
+Status.hasMany(OrganizationMembers, { foreignKey: 'statusId', as: 'organizationMembers' });
 
-Tournament.hasMany(TournamentResult, {
-  foreignKey: 'tournamentId',
-  as: 'results',
-  onDelete: 'CASCADE',
-});
+/* organizationRoles - organizationMembers */
+OrganizationMembers.belongsTo(OrganizationRoles, { foreignKey: 'organizationRoleId', as: 'organizationRole' });
+OrganizationRoles.hasMany(OrganizationMembers, { foreignKey: 'organizationRoleId', as: 'organizationMembers' });
 
-TournamentResult.belongsTo(Tournament, {
-  foreignKey: 'tournamentId',
-  as: 'tournament',
-});
+/* users - organizationMembers */
+OrganizationMembers.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(OrganizationMembers, { foreignKey: 'userId', as: 'organizationMembers' });
 
-Player.hasMany(TournamentResult, {
-  foreignKey: 'playerId',
-  as: 'results',
-  onDelete: 'CASCADE',
-});
-TournamentResult.belongsTo(Player, {
-  foreignKey: 'playerId',
-  as: 'player',
-});
+/* approvedBy */
+OrganizationMembers.belongsTo(User, { foreignKey: 'approvedByUserId', as: 'approvedBy' });
+User.hasMany(OrganizationMembers, { foreignKey: 'approvedByUserId', as: 'approvedMemberships' });
 
-Tournament.hasMany(TournamentMatch, {
-  foreignKey: 'tournamentId',
-  as: 'matches',
-  onDelete: 'CASCADE',
-});
+/* organizations */
+Organization.belongsTo(User, {foreignKey: 'createdByUserId', as: 'createdBy'});
+User.hasMany(Organization, {foreignKey: 'createdByUserId', as: 'createdOrganizations'});
 
-TournamentMatch.belongsTo(Tournament, {
-  foreignKey: 'tournamentId',
-  as: 'tournament',
-});
+Organization.belongsTo(Status, {foreignKey: 'statusId', as: 'status'});
+Status.hasMany(Organization, {foreignKey: 'statusId', as: 'organizations'});
 
-Season.hasMany(TournamentMatch, {
-  foreignKey: 'seasonId',
-  as: 'matches',
-});
+OrganizationRequest.belongsTo(User, {foreignKey: 'userId', as: 'user'});
+User.hasMany(OrganizationRequest, {foreignKey: 'userId', as: 'organizationRequests'});
 
-TournamentMatch.belongsTo(Season, {
-  foreignKey: 'seasonId',
-  as: 'season',
-});
+OrganizationRequest.belongsTo(Organization, {  foreignKey: 'organizationId', as: 'organization'});
+Organization.hasMany(OrganizationRequest, {  foreignKey: 'organizationId', as: 'requests'});
 
-export const syncModels = async () => {
-  await sequelize.sync({ alter: true });
+OrganizationRequest.belongsTo(Status, {foreignKey: 'statusId', as: 'status'});
+Status.hasMany(OrganizationRequest, {foreignKey: 'statusId', as: 'organizationRequests'});
+
+OrganizationRequest.belongsTo(User, {foreignKey: 'reviewedByUserId', as: 'reviewedBy'});
+User.hasMany(OrganizationRequest, {foreignKey: 'reviewedByUserId', as: 'reviewedOrganizationRequests'});
+
+OrganizationMembers.belongsTo(Organization, {foreignKey: 'organizationId', as: 'organization'});
+Organization.hasMany(OrganizationMembers, {foreignKey: 'organizationId', as: 'members'});
+
+export {
+  User,
+  Roles,
+  Status,
+  OrganizationRoles,
+  OrganizationMembers,
+  OrganizationRequest,
+  Organization,
+  /*legacy*/
+  Player,
+  Season,
+  Tournament,
+  TournamentResult,
+  TournamentMatch,
+  PointRule,
+  SyncState,
+  Keyword,
 };

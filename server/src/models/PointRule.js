@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-export const definePointRule = (sequelize) => {
-  const PointRule = sequelize.define('PointRule', {
+export const PointRule = sequelize.define('PointRule', {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -45,6 +45,3 @@ export const definePointRule = (sequelize) => {
   }, {
     tableName: 'point_rules',
   });
-
-  return PointRule;
-};

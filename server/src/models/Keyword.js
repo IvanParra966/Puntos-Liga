@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-export const defineKeyword = (sequelize) => {
-  const Keyword = sequelize.define(
+export const Keyword = sequelize.define(
     'Keyword',
     {
       id: {
@@ -71,6 +71,3 @@ export const defineKeyword = (sequelize) => {
       tableName: 'keywords',
     }
   );
-
-  return Keyword;
-};
