@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiChevronRight, FiX } from 'react-icons/fi';
 import { useSearchParams } from 'react-router-dom';
-import LeagueTable from '../components/LeagueTable';
-import { apiGet } from '../lib/api';
+import LeagueTable from '../../../components/LeagueTable';
+import { apiGet } from '../../../shared/lib/api';
 
 const formatDate = (value) => {
   if (!value) return '-';

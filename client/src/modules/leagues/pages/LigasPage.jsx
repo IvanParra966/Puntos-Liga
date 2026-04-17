@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiGet } from '../lib/api';
+import { apiGet } from '../../../shared/lib/api';
 
 const formatDate = (value) => {
   if (!value) return '-';

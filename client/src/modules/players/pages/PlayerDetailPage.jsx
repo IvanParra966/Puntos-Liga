@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiArrowLeft, FiList, FiX } from 'react-icons/fi';
 import { Link, useParams } from 'react-router-dom';
-import { apiGet } from '../lib/api';
+import { apiGet } from '../../../shared/lib/api';
 
 const formatDate = (value) => {
   if (!value) return '-';

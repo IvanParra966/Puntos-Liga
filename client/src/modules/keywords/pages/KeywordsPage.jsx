@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
-import { apiGet } from '../lib/api';
+import { apiGet } from '../../../shared/lib/api';
 
 function normalizeText(value) {
     return String(value || '').toLowerCase().trim();

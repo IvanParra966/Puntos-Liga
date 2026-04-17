@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { FiAward, FiList, FiLayers, FiMenu, FiX } from 'react-icons/fi';
 import { NavLink, useLocation } from 'react-router-dom';
-import logoLiga from '/logo.png'; // cambiá la ruta si hace falta
+import { useAuth } from '../../modules/auth/context/AuthContext';
+import logoLiga from '/logo.png';
 
 const navItems = [
   {
@@ -45,6 +46,7 @@ const getMobileLinkClass = ({ isActive }) =>
 export default function AppNavbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     setOpen(false);
@@ -76,18 +78,52 @@ export default function AppNavbar() {
             </div>
           </NavLink>
 
-          <nav className="hidden md:flex md:items-center md:gap-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
+          <div className="hidden md:flex md:items-center md:gap-3">
+            <nav className="flex items-center gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
 
-              return (
-                <NavLink key={item.to} to={item.to} className={getDesktopLinkClass}>
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
+                return (
+                  <NavLink key={item.to} to={item.to} className={getDesktopLinkClass}>
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+
+            <div className="flex items-center gap-3">
+              {isAuthenticated ? (
+                <>
+                  <div className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-300">
+                    {user?.username}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-red-400/40 hover:text-white"
+                  >
+                    Salir
+                  </button>
+                </>
+              ) : (
+                <>
+                  <NavLink
+                    to="/login"
+                    className="rounded-lg border border-slate-800 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white"
+                  >
+                    Ingresar
+                  </NavLink>
+                  <NavLink
+                    to="/register"
+                    className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                  >
+                    Registrarse
+                  </NavLink>
+                </>
+              )}
+            </div>
+          </div>
 
           <button
             type="button"
@@ -148,6 +184,32 @@ export default function AppNavbar() {
                 </NavLink>
               );
             })}
+          </div>
+
+          <div className="mt-6 border-t border-slate-800 pt-4">
+            {isAuthenticated ? (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-300">
+                  {user?.username}
+                </div>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="w-full rounded-xl border border-slate-700 px-4 py-3 text-left text-sm font-medium text-slate-200 transition hover:border-red-400/40 hover:text-white"
+                >
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <NavLink to="/login" className={getMobileLinkClass}>
+                  Ingresar
+                </NavLink>
+                <NavLink to="/register" className={getMobileLinkClass}>
+                  Registrarse
+                </NavLink>
+              </div>
+            )}
           </div>
         </nav>
       </aside>
