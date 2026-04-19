@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
-import { User, Roles, Status } from '../models/index.js';
+import { User, Roles, Status } from '../../database/models/index.js';
 
 const signToken = (user) => {
   return jwt.sign(

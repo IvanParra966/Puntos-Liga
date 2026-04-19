@@ -41,7 +41,7 @@ export const Organization = sequelize.define(
     },
   },
   {
-    tableName: 'organizati  on',
+    tableName: 'organization',
     timestamps: true,
     underscored: true,
   }

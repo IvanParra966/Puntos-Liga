@@ -1,6 +1,6 @@
 import app from './app.js';
 import { ensureDatabaseExists, connectDatabase, sequelize } from './config/database.js';
-import '../models/index.js';
+import '../database/models/index.js';
 
 const PORT = process.env.PORT || 4000;
 
