@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import { env } from '../config/env.js';
+import { sequelize } from '../app/config/database.js';
+import { env } from '../app/config/env.js';
 import {
   Player,
   PointRule,
@@ -299,14 +299,14 @@ const buildOverviewFromResults = ({
   return {
     season: season
       ? {
-          id: season.id,
-          key: season.key,
-          name: season.name,
-          year: season.year,
-          seasonNumber: season.seasonNumber,
-          startsAt: season.startsAt,
-          endsAt: season.endsAt,
-        }
+        id: season.id,
+        key: season.key,
+        name: season.name,
+        year: season.year,
+        seasonNumber: season.seasonNumber,
+        startsAt: season.startsAt,
+        endsAt: season.endsAt,
+      }
       : null,
     seasons: seasons.map((item) => ({
       id: item.id,
@@ -611,10 +611,10 @@ export const getSeasonsOverview = async () => {
       playersCount: overview.summary.playersCount,
       winner: winner
         ? {
-            playerId: winner.playerId,
-            name: winner.name,
-            totalPoints: winner.totalPoints,
-          }
+          playerId: winner.playerId,
+          name: winner.name,
+          totalPoints: winner.totalPoints,
+        }
         : null,
     });
   }
@@ -679,12 +679,12 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
 
   const opponentPlayers = opponentLimitlessIds.length
     ? await Player.findAll({
-        where: {
-          limitlessPlayerId: {
-            [Op.in]: opponentLimitlessIds,
-          },
+      where: {
+        limitlessPlayerId: {
+          [Op.in]: opponentLimitlessIds,
         },
-      })
+      },
+    })
     : [];
 
   const opponentMap = new Map(
@@ -737,14 +737,14 @@ export const getPlayerDetail = async (playerId, seasonParam = 'active') => {
     },
     activeSeason: activeSeason
       ? {
-          id: activeSeason.id,
-          key: activeSeason.key,
-          name: activeSeason.name,
-          year: activeSeason.year,
-          seasonNumber: activeSeason.seasonNumber,
-          startsAt: activeSeason.startsAt,
-          endsAt: activeSeason.endsAt,
-        }
+        id: activeSeason.id,
+        key: activeSeason.key,
+        name: activeSeason.name,
+        year: activeSeason.year,
+        seasonNumber: activeSeason.seasonNumber,
+        startsAt: activeSeason.startsAt,
+        endsAt: activeSeason.endsAt,
+      }
       : null,
     seasons: seasons.map((season) => ({
       id: season.id,

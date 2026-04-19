@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { env } from '../config/env.js';
+import { env } from '../app/config/env.js';
 import { includesKeyword } from '../utils/text.js';
 
 const api = axios.create({
@@ -66,7 +66,7 @@ export const fetchAllCatamarcaTournaments = async () => {
 
     if (currentPage.length < env.limitless.pageSize) {
       break;
-      }
+    }
   }
 
   return tournaments.filter((tournament) => {
@@ -81,7 +81,7 @@ export const fetchAllCatamarcaTournaments = async () => {
 };
 
 export const fetchTournamentStandings = async (tournamentId) => {
-  const response = await getWithRetry(`/tournaments/${tournamentId}/standings`  );
+  const response = await getWithRetry(`/tournaments/${tournamentId}/standings`);
   return Array.isArray(response.data) ? response.data : [];
 };
 

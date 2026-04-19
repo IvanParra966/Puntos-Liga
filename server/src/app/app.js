@@ -2,10 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './config/env.js';
 
-import leagueRoutes from './routes/leagueRoutes.js';
-import pointRoutes from './routes/pointRoutes.js';
-import keywordRoutes from './routes/keywordRoutes.js';
-import authRoutes from './routes/authRoutes.js';
+import leagueRoutes from '../routes/leagueRoutes.js';
+import pointRoutes from '../routes/pointRoutes.js';
+import keywordRoutes from '../routes/keywordRoutes.js';
+import authRoutes from '../modules/auth/authRoutes.js';
 
 const app = express();
 
