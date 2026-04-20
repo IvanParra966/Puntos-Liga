@@ -19,7 +19,7 @@ export const Keyword = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    reminderText: {
+    reminder_text: {
       type: DataTypes.TEXT,
       allowNull: true,
     },
@@ -57,11 +57,11 @@ export const Keyword = sequelize.define(
       allowNull: true,
       defaultValue: [],
     },
-    funFact: {
+    fun_fact: {
       type: DataTypes.TEXT('long'),
       allowNull: true,
     },
-    sortOrder: {
+    sort_order: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,

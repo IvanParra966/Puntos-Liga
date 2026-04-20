@@ -35,16 +35,16 @@ export const User = sequelize.define(
         this.setDataValue('email', value.trim().toLowerCase());
       },
     },
-    passwordHash: {
+    password_hash: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    roleId: {
+    role_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 2,
     },
-    statusId: {
+    status_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 1,

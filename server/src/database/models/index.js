@@ -1,58 +1,143 @@
 import { User } from './users.js';
 import { Roles } from './roles.js';
 import { Status } from './status.js';
-import { OrganizationRoles } from './organizationRoles.js';
-import { OrganizationMembers } from './organizationMembers.js';
-import { OrganizationRequest } from './organizationRequests.js';
+import { Permission } from './permissions.js';
+
+import { OrganizationRoles } from './organization_roles.js';
+import { OrganizationMembers } from './organization_members.js';
+import { OrganizationRequest } from './organization_requests.js';
 import { Organization } from './organizations.js';
+
+import { RolePermissions } from './role_permissions.js';
+import { OrganizationRolePermissions } from './organization_role_permissions.js';
+import { OrganizationMembersPermissions } from './organization_members_permissions.js';
+
 import { Keyword } from './Keyword.js';
 
-User.belongsTo(Roles, { foreignKey: 'roleId', as: 'role' });
-Roles.hasMany(User, { foreignKey: 'roleId', as: 'users' });
+/* =========================
+   USERS / ROLES / STATUS
+========================= */
 
-User.belongsTo(Status, { foreignKey: 'statusId', as: 'status' });
-Status.hasMany(User, { foreignKey: 'statusId', as: 'users' });
+User.belongsTo(Roles, { foreignKey: 'role_id', as: 'role' });
+Roles.hasMany(User, { foreignKey: 'role_id', as: 'users' });
 
-OrganizationMembers.belongsTo(Status, { foreignKey: 'statusId', as: 'status' });
-Status.hasMany(OrganizationMembers, { foreignKey: 'statusId', as: 'organizationMembers' });
+User.belongsTo(Status, { foreignKey: 'status_id', as: 'status' });
+Status.hasMany(User, { foreignKey: 'status_id', as: 'users' });
 
-OrganizationMembers.belongsTo(OrganizationRoles, { foreignKey: 'organizationRoleId', as: 'organizationRole' });
-OrganizationRoles.hasMany(OrganizationMembers, { foreignKey: 'organizationRoleId', as: 'organizationMembers' });
+/* =========================
+   ORGANIZATIONS
+========================= */
 
-OrganizationMembers.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(OrganizationMembers, { foreignKey: 'userId', as: 'organizationMembers' });
+Organization.belongsTo(User, { foreignKey: 'created_by_user_id', as: 'createdBy' });
+User.hasMany(Organization, { foreignKey: 'created_by_user_id', as: 'createdOrganizations' });
 
-OrganizationMembers.belongsTo(User, { foreignKey: 'approvedByUserId', as: 'approvedBy' });
-User.hasMany(OrganizationMembers, { foreignKey: 'approvedByUserId', as: 'approvedMemberships' });
+Organization.belongsTo(Status, { foreignKey: 'status_id', as: 'status' });
+Status.hasMany(Organization, { foreignKey: 'status_id', as: 'organizations' });
 
-Organization.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
-User.hasMany(Organization, { foreignKey: 'createdByUserId', as: 'createdOrganizations' });
+/* =========================
+   ORGANIZATION REQUESTS
+========================= */
 
-Organization.belongsTo(Status, { foreignKey: 'statusId', as: 'status' });
-Status.hasMany(Organization, { foreignKey: 'statusId', as: 'organizations' });
+OrganizationRequest.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(OrganizationRequest, { foreignKey: 'user_id', as: 'organizationRequests' });
 
-OrganizationRequest.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(OrganizationRequest, { foreignKey: 'userId', as: 'organizationRequests' });
+OrganizationRequest.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Organization.hasMany(OrganizationRequest, { foreignKey: 'organization_id', as: 'requests' });
 
-OrganizationRequest.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
-Organization.hasMany(OrganizationRequest, { foreignKey: 'organizationId', as: 'requests' });
+OrganizationRequest.belongsTo(Status, { foreignKey: 'status_id', as: 'status' });
+Status.hasMany(OrganizationRequest, { foreignKey: 'status_id', as: 'organizationRequests' });
 
-OrganizationRequest.belongsTo(Status, { foreignKey: 'statusId', as: 'status' });
-Status.hasMany(OrganizationRequest, { foreignKey: 'statusId', as: 'organizationRequests' });
+OrganizationRequest.belongsTo(User, { foreignKey: 'reviewed_by_user_id', as: 'reviewedBy' });
+User.hasMany(OrganizationRequest, { foreignKey: 'reviewed_by_user_id', as: 'reviewedOrganizationRequests' });
 
-OrganizationRequest.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'reviewedBy' });
-User.hasMany(OrganizationRequest, { foreignKey: 'reviewedByUserId', as: 'reviewedOrganizationRequests' });
+/* =========================
+   ORGANIZATION MEMBERS
+========================= */
 
-OrganizationMembers.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
-Organization.hasMany(OrganizationMembers, { foreignKey: 'organizationId', as: 'members' });
+OrganizationMembers.belongsTo(Status, { foreignKey: 'status_id', as: 'status' });
+Status.hasMany(OrganizationMembers, { foreignKey: 'status_id', as: 'organizationMembers' });
+
+OrganizationMembers.belongsTo(OrganizationRoles, { foreignKey: 'organization_role_id', as: 'organizationRole' });
+OrganizationRoles.hasMany(OrganizationMembers, { foreignKey: 'organization_role_id', as: 'organizationMembers' });
+
+OrganizationMembers.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(OrganizationMembers, { foreignKey: 'user_id', as: 'organizationMembers' });
+
+OrganizationMembers.belongsTo(User, { foreignKey: 'approved_by_user_id', as: 'approvedBy' });
+User.hasMany(OrganizationMembers, { foreignKey: 'approved_by_user_id', as: 'approvedMemberships' });
+
+OrganizationMembers.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Organization.hasMany(OrganizationMembers, { foreignKey: 'organization_id', as: 'members' });
+
+/* =========================
+   ROLE PERMISSIONS (global)
+========================= */
+
+RolePermissions.belongsTo(Roles, { foreignKey: 'role_id', as: 'role' });
+Roles.hasMany(RolePermissions, { foreignKey: 'role_id', as: 'rolePermissions' });
+
+RolePermissions.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permission' });
+Permission.hasMany(RolePermissions, { foreignKey: 'permission_id', as: 'rolePermissions' });
+
+/* =========================
+   ORGANIZATION ROLE PERMISSIONS
+========================= */
+
+OrganizationRolePermissions.belongsTo(OrganizationRoles, {
+  foreignKey: 'organization_role_id',
+  as: 'organizationRole',
+});
+OrganizationRoles.hasMany(OrganizationRolePermissions, {
+  foreignKey: 'organization_role_id',
+  as: 'organizationRolePermissions',
+});
+
+OrganizationRolePermissions.belongsTo(Permission, {
+  foreignKey: 'permission_id',
+  as: 'permission',
+});
+Permission.hasMany(OrganizationRolePermissions, {
+  foreignKey: 'permission_id',
+  as: 'organizationRolePermissions',
+});
+
+/* =========================
+   ORGANIZATION MEMBER PERMISSIONS
+========================= */
+
+OrganizationMembersPermissions.belongsTo(OrganizationMembers, {
+  foreignKey: 'organization_member_id',
+  as: 'organizationMember',
+});
+OrganizationMembers.hasMany(OrganizationMembersPermissions, {
+  foreignKey: 'organization_member_id',
+  as: 'memberPermissions',
+});
+
+OrganizationMembersPermissions.belongsTo(Permission, {
+  foreignKey: 'permission_id',
+  as: 'permission',
+});
+Permission.hasMany(OrganizationMembersPermissions, {
+  foreignKey: 'permission_id',
+  as: 'organizationMemberPermissions',
+});
+
+/* =========================
+   EXPORTS
+========================= */
 
 export {
   User,
   Roles,
   Status,
-  OrganizationRoles,
-  OrganizationMembers,
-  OrganizationRequest,
+  Permission,
+  RolePermissions,
   Organization,
+  OrganizationRequest,
+  OrganizationRoles,
+  OrganizationRolePermissions,
+  OrganizationMembers,
+  OrganizationMembersPermissions,
   Keyword,
 };

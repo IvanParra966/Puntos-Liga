@@ -22,11 +22,11 @@ export const Organization = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    logoUrl: {
+    logo_url: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    createdByUserId: {
+    created_by_user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
@@ -34,7 +34,7 @@ export const Organization = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    statusId: {
+    status_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 3,

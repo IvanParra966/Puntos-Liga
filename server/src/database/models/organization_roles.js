@@ -18,6 +18,10 @@ export const OrganizationRoles = sequelize.define(
       type: DataTypes.STRING(80),
       allowNull: false,
     },
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   },
   {
     tableName: 'organization_roles',
@@ -28,8 +32,11 @@ export const OrganizationRoles = sequelize.define(
 
 OrganizationRoles.afterSync(async () => {
   const initialRoles = [
-    { code: 'owner', name: 'Dueño' },
-    { code: 'organizer', name: 'Organizador' },
+    { code: 'owner', name: 'Dueño', description: 'Dueño de la organización' },
+    { code: 'organization_admin', name: 'Administrador de la organización', description: 'Administrador de la organización' },
+    { code: 'tournament_manager', name: 'Manager de torneos', description: 'Manager de torneos' },
+    { code: 'tournament_staff', name: 'Staff de torneos', description: 'Staff de torneos' },
+    { code: 'viewer', name: 'Espectador', description: 'Espectador de la organización' },
   ];
 
   for (const roleData of initialRoles) {

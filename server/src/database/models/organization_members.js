@@ -1,51 +1,49 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../../app/config/database.js';
 
-export const OrganizationRequest = sequelize.define(
-  'OrganizationRequest',
+export const OrganizationMembers = sequelize.define(
+  'OrganizationMembers',
   {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    userId: {
+    user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    requestType: {
-      type: DataTypes.ENUM('create_organization', 'become_organizer'),
-      allowNull: false,
-    },
-    organizationId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-    organizationNameRequested: {
-      type: DataTypes.STRING(120),
-      allowNull: true,
-    },
-    message: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    statusId: {
+    organization_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 3,
     },
-    reviewedByUserId: {
+    organization_role_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    status_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    approved_by_user_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-    reviewedAt: {
+    approved_at: {
       type: DataTypes.DATE,
       allowNull: true,
     },
   },
   {
-    tableName: 'OrganizationRequest',
+    tableName: 'organization_members',
     timestamps: true,
     underscored: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['organization_id', 'user_id'],
+      },
+    ],
   }
 );

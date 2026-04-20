@@ -32,7 +32,9 @@ export const Roles = sequelize.define(
 
 Roles.afterSync(async () => {
   const initialRoles = [
-    { code: 'admin', name: 'Administrador', description: 'Administrador del sistema' },
+    { code: 'system_owner', name: 'Dueño del sistema', description: 'Dueño del sistema' },
+    { code: 'platform_admin', name: 'Administrador de la plataforma', description: 'Administrador de la plataforma' },
+    { code: 'support_admin', name: 'Administrador de soporte', description: 'Administrador de soporte' },
     { code: 'player', name: 'Jugador', description: 'Jugador del sistema' },
   ];
 
