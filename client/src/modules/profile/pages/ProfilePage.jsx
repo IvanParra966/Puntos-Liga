@@ -1,25 +1,33 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../auth/context/AuthContext';
 import ProfileSidebar from '../components/ProfileSidebar';
 import ProfileInfoSection from '../components/ProfileInfoSection';
 import ProfileSecuritySection from '../components/ProfileSecuritySection';
 import ProfileOrganizeSection from '../components/ProfileOrganizeSection';
+import { updateMyProfile } from '../services/profileService';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, token, refreshMe } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const [saving, setSaving] = useState(false);
 
   const [profileForm, setProfileForm] = useState({
-    first_name: user?.name?.split(' ')[0] || '',
-    last_name: user?.name?.split(' ').slice(1).join(' ') || '',
+    first_name: '',
+    last_name: '',
     country_id: '',
-    in_game_name: user?.username || '',
+    in_game_name: '',
   });
 
-  const roleLabel = useMemo(() => {
-    if (!user?.role) return 'player';
-    return user.role;
+  useEffect(() => {
+    setProfileForm({
+      first_name: user?.name?.split(' ')[0] || '',
+      last_name: user?.name?.split(' ').slice(1).join(' ') || '',
+      country_id: user?.country_id ? String(user.country_id) : '',
+      in_game_name: user?.username || '',
+    });
   }, [user]);
+
+  const roleLabel = useMemo(() => user?.role || 'player', [user]);
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -27,6 +35,29 @@ export default function ProfilePage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+
+      await updateMyProfile(
+        {
+          first_name: profileForm.first_name,
+          last_name: profileForm.last_name,
+          country_id: profileForm.country_id ? Number(profileForm.country_id) : null,
+          in_game_name: profileForm.in_game_name,
+        },
+        token
+      );
+
+      await refreshMe();
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert(error.message || 'No se pudo actualizar el perfil');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -44,6 +75,8 @@ export default function ProfilePage() {
             <ProfileInfoSection
               profileForm={profileForm}
               handleProfileChange={handleProfileChange}
+              onSave={handleSaveProfile}
+              saving={saving}
             />
           ) : null}
 
@@ -51,9 +84,7 @@ export default function ProfilePage() {
             <ProfileSecuritySection user={user} />
           ) : null}
 
-          {activeTab === 'organize' ? (
-            <ProfileOrganizeSection />
-          ) : null}
+          {activeTab === 'organize' ? <ProfileOrganizeSection /> : null}
         </div>
       </div>
     </div>

@@ -29,7 +29,12 @@ function Select(props) {
   );
 }
 
-export default function ProfileInfoSection({ profileForm, handleProfileChange }) {
+export default function ProfileInfoSection({
+  profileForm,
+  handleProfileChange,
+  onSave,
+  saving,
+}) {
   const [countries, setCountries] = useState([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
 
@@ -49,7 +54,11 @@ export default function ProfileInfoSection({ profileForm, handleProfileChange })
   }, []);
 
   return (
-    <ProfileSectionCard title="Player Information" actionLabel="Actualizar">
+    <ProfileSectionCard
+      title="Player Information"
+      actionLabel={saving ? 'Guardando...' : 'Actualizar'}
+      onAction={onSave}
+    >
       <div className="space-y-4">
         <Field label="First name">
           <Input
@@ -78,7 +87,7 @@ export default function ProfileInfoSection({ profileForm, handleProfileChange })
               {loadingCountries ? 'Cargando países...' : 'Seleccionar país'}
             </option>
             {countries.map((country) => (
-              <option key={country.id} value={country.id}>
+              <option key={country.id} value={String(country.id)}>
                 {country.name}
               </option>
             ))}

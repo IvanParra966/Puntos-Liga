@@ -24,17 +24,18 @@ const buildUserResponse = (user) => {
     email: user.email,
     role_id: user.role_id,
     status_id: user.status_id,
+    country_id: user.country_id,
     role: user.role ? user.role.code : null,
     status: user.status ? user.status.code : null,
     country: user.country
       ? {
-        id: user.country.id,
-        code: user.country.code,
-        name: user.country.name,
-      }
+          id: user.country.id,
+          code: user.country.code,
+          name: user.country.name,
+        }
       : null,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
+    created_at: user.createdAt,
+    updated_at: user.updatedAt,
   };
 };
 

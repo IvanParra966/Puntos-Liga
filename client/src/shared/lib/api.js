@@ -11,11 +11,7 @@ const buildHeaders = (customHeaders = {}, hasBody = false) => {
 };
 
 export const apiRequest = async (path, options = {}) => {
-  const {
-    method = 'GET',
-    body,
-    headers = {},
-  } = options;
+  const { method = 'GET', body, headers = {} } = options;
 
   const response = await fetch(`${API_URL}${path}`, {
     method,
@@ -38,4 +34,8 @@ export const apiGet = (path, headers = {}) => {
 
 export const apiPost = (path, body, headers = {}) => {
   return apiRequest(path, { method: 'POST', body, headers });
+};
+
+export const apiPut = (path, body, headers = {}) => {
+  return apiRequest(path, { method: 'PUT', body, headers });
 };

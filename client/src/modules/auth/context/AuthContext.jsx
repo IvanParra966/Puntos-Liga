@@ -54,23 +54,29 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const register = async ({ username, name, email, password, confirmPassword, country_id }) => {
-    const data = await registerRequest({
-      username,
-      name,
-      email,
-      password,
-      confirmPassword,
-      country_id,
-    });
+const register = async ({
+  username,
+  name,
+  email,
+  password,
+  confirmPassword,
+  country_id,
+}) => {
+  const data = await registerRequest({
+    username,
+    name,
+    email,
+    password,
+    confirmPassword,
+    country_id,
+  });
 
-    localStorage.setItem(TOKEN_KEY, data.token);
-    setToken(data.token);
-    setUser(data.user);
+  localStorage.setItem(TOKEN_KEY, data.token);
+  setToken(data.token);
+  setUser(data.user);
 
-    return data;
-  };
-
+  return data;
+};
   const logout = () => {
     clearSession();
   };
