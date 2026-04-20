@@ -1,151 +1,310 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { FiChevronRight, FiGlobe, FiLock, FiMail, FiUser } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { getCountries } from '../../countries/services/countriesService';
+
+function InputIcon({ children }) {
+  return (
+    <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
+      {children}
+    </div>
+  );
+}
 
 export default function RegisterPage() {
-    const navigate = useNavigate();
-    const { register, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+  const { register, isAuthenticated, loading } = useAuth();
 
-    const [form, setForm] = useState({
-        username: '',
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-    });
-    const [error, setError] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    username: '',
+    name: '',
+    email: '',
+    country_id: '',
+    password: '',
+    confirmPassword: '',
+  });
 
-    if (!loading && isAuthenticated) {
-        return <Navigate to="/ranking" replace />;
+  const [countries, setCountries] = useState([]);
+  const [countriesLoading, setCountriesLoading] = useState(true);
+  const [countriesError, setCountriesError] = useState('');
+
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const formReady = useMemo(() => {
+    return (
+      form.username &&
+      form.name &&
+      form.email &&
+      form.country_id &&
+      form.password &&
+      form.confirmPassword
+    );
+  }, [form]);
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const data = await getCountries();
+        setCountries(data.countries || []);
+      } catch (err) {
+        setCountriesError(err.message || 'No se pudieron cargar los países');
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    run();
+  }, []);
+
+  if (!loading && isAuthenticated) {
+    return <Navigate to="/profile" replace />;
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!formReady) {
+      setError('Completá todos los campos');
+      return;
     }
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
+    if (form.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
 
-        setForm((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
+    if (form.password !== form.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
+    setSubmitting(true);
 
-        if (!form.username || !form.name || !form.email || !form.password || !form.confirmPassword) {
-            setError('Completá todos los campos');
-            return;
-        }
+    try {
+      await register({
+        ...form,
+        country_id: Number(form.country_id),
+      });
 
-        if (form.password !== form.confirmPassword) {
-            setError('Las contraseñas no coinciden');
-            return;
-        }
+      navigate('/profile', { replace: true });
+    } catch (err) {
+      setError(err.message || 'No se pudo registrar el usuario');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-        setSubmitting(true);
+  return (
+    <div className="mx-auto grid min-h-[calc(100vh-7rem)] w-full max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="hidden rounded-3xl border border-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_30%),linear-gradient(to_bottom_right,rgba(15,23,42,0.95),rgba(2,6,23,1))] p-8 lg:flex lg:flex-col lg:justify-between">
+        <div>
+          <div className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-300">
+            VortexTCG
+          </div>
 
-        try {
-            await register(form);
-            navigate('/ranking', { replace: true });
-        } catch (err) {
-            setError(err.message || 'No se pudo registrar el usuario');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+          <h1 className="mt-6 max-w-md text-4xl font-bold tracking-tight text-white">
+            Creá tu cuenta y preparate para organizar y jugar torneos
+          </h1>
 
-    return (
-        <div className="mx-auto flex min-h-[70vh] max-w-md items-center">
-            <div className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-                <h1 className="text-2xl font-bold text-white">Crear cuenta</h1>
-                <p className="mt-2 text-sm text-slate-400">
-                    Registrate como jugador para entrar al sistema.
-                </p>
-
-                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                    <div>
-                        <label className="mb-1 block text-sm text-slate-300">Usuario</label>
-                        <input
-                            type="text"
-                            name="username"
-                            value={form.username}
-                            onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                            placeholder="username"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm text-slate-300">Nombre</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={form.name}
-                            onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                            placeholder="tu nombre"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm text-slate-300">Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                            placeholder="tu_correo@mail.com"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm text-slate-300">Contraseña</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={form.password}
-                            onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                            placeholder="******"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm text-slate-300">Confirmar contraseña</label>
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            value={form.confirmPassword}
-                            onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                            placeholder="******"
-                        />
-                    </div>
-
-                    {error ? (
-                        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                            {error}
-                        </div>
-                    ) : null}
-
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        className="w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                        {submitting ? 'Creando cuenta...' : 'Registrarme'}
-                    </button>
-                </form>
-
-                <p className="mt-4 text-sm text-slate-400">
-                    ¿Ya tenés cuenta?{' '}
-                    <Link to="/login" className="font-medium text-cyan-300 hover:text-cyan-200">
-                        Ingresá acá
-                    </Link>
-                </p>
-            </div>
+          <p className="mt-4 max-w-xl text-base leading-7 text-slate-300">
+            Registrate como jugador, completá tus datos y dejá listo tu perfil para
+            participar, solicitar acceso organizativo y crecer dentro de la plataforma.
+          </p>
         </div>
-    );
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+            <p className="text-sm font-semibold text-white">Perfil competitivo</p>
+            <p className="mt-2 text-sm text-slate-400">
+              País, nombre en juego y datos listos para lo que viene.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+            <p className="text-sm font-semibold text-white">Escalable</p>
+            <p className="mt-2 text-sm text-slate-400">
+              Pensado para sumar organizaciones, torneos y permisos después.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="flex items-center">
+        <div className="w-full rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-white">Crear cuenta</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Completá tus datos para empezar dentro de VortexTCG.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Usuario
+                </label>
+                <div className="relative">
+                  <InputIcon>
+                    <FiUser size={18} />
+                  </InputIcon>
+                  <input
+                    type="text"
+                    name="username"
+                    value={form.username}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                    placeholder="username"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Nombre
+                </label>
+                <div className="relative">
+                  <InputIcon>
+                    <FiUser size={18} />
+                  </InputIcon>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                    placeholder="name"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                Email
+              </label>
+              <div className="relative">
+                <InputIcon>
+                  <FiMail size={18} />
+                </InputIcon>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                  placeholder="email"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                País
+              </label>
+              <div className="relative">
+                <InputIcon>
+                  <FiGlobe size={18} />
+                </InputIcon>
+                <select
+                  name="country_id"
+                  value={form.country_id}
+                  onChange={handleChange}
+                  disabled={countriesLoading}
+                  className="w-full appearance-none rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400 disabled:opacity-70"
+                >
+                  <option value="">
+                    {countriesLoading ? 'Cargando países...' : 'Seleccioná tu país'}
+                  </option>
+                  {countries.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {countriesError ? (
+                <p className="mt-2 text-sm text-amber-300">{countriesError}</p>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <InputIcon>
+                    <FiLock size={18} />
+                  </InputIcon>
+                  <input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Confirmar contraseña
+                </label>
+                <div className="relative">
+                  <InputIcon>
+                    <FiLock size={18} />
+                  </InputIcon>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                    placeholder="Repetí tu contraseña"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {error ? (
+              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                {error}
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={submitting || countriesLoading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <span>{submitting ? 'Creando cuenta...' : 'Crear cuenta'}</span>
+              {!submitting ? <FiChevronRight size={18} /> : null}
+            </button>
+          </form>
+
+          <p className="mt-6 text-sm text-slate-400">
+            ¿Ya tenés cuenta?{' '}
+            <Link to="/login" className="font-medium text-cyan-300 hover:text-cyan-200">
+              Ingresá acá
+            </Link>
+          </p>
+        </div>
+      </section>
+    </div>
+  );
 }

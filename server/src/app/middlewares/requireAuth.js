@@ -40,8 +40,9 @@ export const requireAuth = async (req, res, next) => {
       id: user.id,
       username: user.username,
       email: user.email,
-      roleId: user.roleId,
-      statusId: user.statusId,
+      role_id: user.role_id,
+      status_id: user.status_id,
+      country_id: user.country_id,
       role: user.role?.code || null,
       status: user.status?.code || null,
     };
@@ -49,7 +50,6 @@ export const requireAuth = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('requireAuth error:', error);
-
     return res.status(401).json({
       ok: false,
       message: 'Token inválido o vencido',

@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
-import { User, Roles, Status } from '../../database/models/index.js';
+import { User, Roles, Status, Countries } from '../../database/models/index.js';
 
 const signToken = (user) => {
   return jwt.sign(
@@ -26,6 +26,13 @@ const buildUserResponse = (user) => {
     status_id: user.status_id,
     role: user.role ? user.role.code : null,
     status: user.status ? user.status.code : null,
+    country: user.country
+      ? {
+        id: user.country.id,
+        code: user.country.code,
+        name: user.country.name,
+      }
+      : null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -33,7 +40,7 @@ const buildUserResponse = (user) => {
 
 export const register = async (req, res) => {
   try {
-    const { username, name, email, password, confirmPassword } = req.body;
+    const { username, name, email, password, confirmPassword, country_id } = req.body;
 
     if (!username || !name || !email || !password || !confirmPassword) {
       return res.status(400).json({
@@ -100,6 +107,7 @@ export const register = async (req, res) => {
       password_hash: passwordHash,
       role_id: playerRole.id,
       status_id: activeStatus.id,
+      country_id: country_id || null,
     });
 
 
@@ -107,6 +115,7 @@ export const register = async (req, res) => {
       include: [
         { model: Roles, as: 'role' },
         { model: Status, as: 'status' },
+        { model: Countries, as: 'country' },
       ],
     });
 
@@ -150,6 +159,7 @@ export const login = async (req, res) => {
       include: [
         { model: Roles, as: 'role' },
         { model: Status, as: 'status' },
+        { model: Countries, as: 'country' },
       ],
     });
 
@@ -199,6 +209,7 @@ export const me = async (req, res) => {
       include: [
         { model: Roles, as: 'role' },
         { model: Status, as: 'status' },
+        { model: Countries, as: 'country' },
       ],
     });
 

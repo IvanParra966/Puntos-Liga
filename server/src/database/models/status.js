@@ -30,6 +30,7 @@ Status.afterSync(async () => {
   const initialStatus = [
     { code: 'active', name: 'Activo' },
     { code: 'inactive', name: 'Inactivo' },
+    { code: 'approved', name: 'Aprobado' },
     { code: 'pending', name: 'Pendiente' },
     { code: 'rejected', name: 'Rechazado' },
     { code: 'blocked', name: 'Bloqueado' },

@@ -10,44 +10,34 @@ export const User = sequelize.define(
       primaryKey: true,
     },
     username: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
-      validate: {
-        len: [3, 50],
-      },
-    },
-    name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      validate: {
-        len: [2, 100],
-      },
+      unique: true,
+    },
+    name: {
+      type: DataTypes.STRING(150),
+      allowNull: false,
     },
     email: {
       type: DataTypes.STRING(150),
       allowNull: false,
       unique: true,
-      validate: {
-        isEmail: true,
-      },
-      set(value) {
-        this.setDataValue('email', value.trim().toLowerCase());
-      },
     },
     password_hash: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
       allowNull: false,
     },
     role_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 2,
     },
     status_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 1,
+    },
+    country_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
   },
   {
@@ -55,11 +45,13 @@ export const User = sequelize.define(
     timestamps: true,
     underscored: true,
     defaultScope: {
-      attributes: { exclude: ['password_hash'] },
+      attributes: {
+        exclude: ['password_hash'],
+      },
     },
     scopes: {
       withPassword: {
-        attributes: { include: ['password_hash'] },
+        attributes: {},
       },
     },
   }

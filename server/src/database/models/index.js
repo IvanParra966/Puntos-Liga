@@ -13,6 +13,7 @@ import { OrganizationRolePermissions } from './organization_role_permissions.js'
 import { OrganizationMembersPermissions } from './organization_members_permissions.js';
 
 import { Keyword } from './Keyword.js';
+import { Countries } from './countries.js';
 
 /* =========================
    USERS / ROLES / STATUS
@@ -124,6 +125,16 @@ Permission.hasMany(OrganizationMembersPermissions, {
 });
 
 /* =========================
+   COUNTRIES
+========================= */
+
+Countries.belongsTo(Status, { foreignKey: 'status_id', as: 'status' });
+Status.hasMany(Countries, { foreignKey: 'status_id', as: 'countries' });
+
+User.belongsTo(Countries, { foreignKey: 'country_id', as: 'country' });
+Countries.hasMany(User, { foreignKey: 'country_id', as: 'users' });
+
+/* =========================
    EXPORTS
 ========================= */
 
@@ -140,4 +151,5 @@ export {
   OrganizationMembers,
   OrganizationMembersPermissions,
   Keyword,
+  Countries,
 };

@@ -1,7 +1,11 @@
 import authRoutes from '../modules/auth/authRoutes.js';
 import organizationRequestsRoutes from '../modules/organizationsRequests/organizationRequestsRoutes.js';
+import organizationRequestsAdminRoutes from '../modules/organizationsRequests/organizationRequestsAdminRoutes.js';
+import countriesRoutes from '../modules/countries/countriesRoutes.js';
 
 export default function registerRoutes(app) {
   app.use('/api/auth', authRoutes);
   app.use('/api/organization-requests', organizationRequestsRoutes);
+  app.use('/api/admin/organization-requests', organizationRequestsAdminRoutes);
+  app.use('/api/countries', countriesRoutes);
 }

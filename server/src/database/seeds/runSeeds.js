@@ -4,6 +4,7 @@ import {
   OrganizationRoles,
   RolePermissions,
   OrganizationRolePermissions,
+  Countries,
 } from '../models/index.js';
 
 import {
@@ -14,6 +15,7 @@ import {
 
 import { rolePermissionsSeed } from './rolePermissionsSeed.js';
 import { organizationRolePermissionsSeed } from './organizationRolePermissionsSeed.js';
+import { countriesSeed } from './countriesSeeds.js';
 
 async function seedCatalog(model, items, key = 'code') {
   for (const item of items) {
@@ -87,10 +89,12 @@ async function seedOrganizationRolePermissions() {
   }
 }
 
+
 export async function runSeeds() {
   await seedCatalog(Roles, globalRolesSeed);
   await seedCatalog(OrganizationRoles, organizationRolesSeed);
   await seedCatalog(Permission, permissionsSeed);
+  await seedCatalog(Countries, countriesSeed);
 
   await seedRolePermissions();
   await seedOrganizationRolePermissions();
