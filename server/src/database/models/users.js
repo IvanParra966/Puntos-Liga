@@ -55,11 +55,11 @@ export const User = sequelize.define(
     timestamps: true,
     underscored: true,
     defaultScope: {
-      attributes: { exclude: ['passwordHash'] },
+      attributes: { exclude: ['password_hash'] },
     },
     scopes: {
       withPassword: {
-        attributes: { include: ['passwordHash'] },
+        attributes: { include: ['password_hash'] },
       },
     },
   }

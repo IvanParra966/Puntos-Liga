@@ -1,6 +1,7 @@
 import app from './app.js';
 import { ensureDatabaseExists, connectDatabase, sequelize } from './config/database.js';
 import '../database/models/index.js';
+import { runSeeds } from '../database/seeds/runSeeds.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -9,6 +10,7 @@ async function bootstrap() {
     await ensureDatabaseExists();
     await connectDatabase();
     await sequelize.sync();
+    await runSeeds();
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

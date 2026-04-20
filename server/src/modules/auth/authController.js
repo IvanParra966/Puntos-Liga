@@ -7,7 +7,7 @@ const signToken = (user) => {
   return jwt.sign(
     {
       id: user.id,
-      roleId: user.roleId,
+      role_id: user.role_id,
     },
     process.env.JWT_SECRET,
     {
@@ -22,8 +22,8 @@ const buildUserResponse = (user) => {
     username: user.username,
     name: user.name,
     email: user.email,
-    roleId: user.roleId,
-    statusId: user.statusId,
+    role_id: user.role_id,
+    status_id: user.status_id,
     role: user.role ? user.role.code : null,
     status: user.status ? user.status.code : null,
     createdAt: user.createdAt,
@@ -79,6 +79,7 @@ export const register = async (req, res) => {
       where: { code: 'player' },
     });
 
+
     const activeStatus = await Status.findOne({
       where: { code: 'active' },
     });
@@ -96,10 +97,11 @@ export const register = async (req, res) => {
       username: normalizedUsername,
       name: name.trim(),
       email: normalizedEmail,
-      passwordHash,
-      roleId: playerRole.id,
-      statusId: activeStatus.id,
+      password_hash: passwordHash,
+      role_id: playerRole.id,
+      status_id: activeStatus.id,
     });
+
 
     const createdUser = await User.findByPk(user.id, {
       include: [
@@ -165,7 +167,7 @@ export const login = async (req, res) => {
       });
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {
       return res.status(401).json({

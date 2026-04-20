@@ -29,23 +29,3 @@ export const Roles = sequelize.define(
     underscored: true,
   }
 );
-
-Roles.afterSync(async () => {
-  const initialRoles = [
-    { code: 'system_owner', name: 'Dueño del sistema', description: 'Dueño del sistema' },
-    { code: 'platform_admin', name: 'Administrador de la plataforma', description: 'Administrador de la plataforma' },
-    { code: 'support_admin', name: 'Administrador de soporte', description: 'Administrador de soporte' },
-    { code: 'player', name: 'Jugador', description: 'Jugador del sistema' },
-  ];
-
-  for (const roleData of initialRoles) {
-    try {
-      await Roles.findOrCreate({
-        where: { code: roleData.code },
-        defaults: roleData,
-      });
-    } catch (error) {
-      console.error('Error seeding roles:', error);
-    }
-  }
-});
