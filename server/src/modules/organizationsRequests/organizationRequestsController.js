@@ -1,4 +1,4 @@
-import { OrganizationRequest, Organization, Status } from '../../database/models/index.js';
+import { OrganizationRequest, Status } from '../../database/models/index.js';
 
 export async function createOrganizationRequest(req, res) {
   try {
@@ -47,7 +47,7 @@ export async function createOrganizationRequest(req, res) {
 
     return res.status(201).json({
       ok: true,
-      message: 'Solicitud enviada correctamente',
+      message: 'Solicitud creada correctamente',
       request: newRequest,
     });
   } catch (error) {
@@ -66,10 +66,6 @@ export async function getMyOrganizationRequests(req, res) {
         user_id: req.user.id,
       },
       include: [
-        {
-          model: Organization,
-          as: 'organization',
-        },
         {
           model: Status,
           as: 'status',
@@ -139,10 +135,6 @@ export async function cancelOrganizationRequest(req, res) {
 
     const updatedRequest = await OrganizationRequest.findByPk(request.id, {
       include: [
-        {
-          model: Organization,
-          as: 'organization',
-        },
         {
           model: Status,
           as: 'status',

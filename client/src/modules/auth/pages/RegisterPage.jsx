@@ -131,7 +131,7 @@ export default function RegisterPage() {
                   value={form.username}
                   onChange={handleChange}
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                  placeholder="ivan966"
+                  placeholder="username"
                 />
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function RegisterPage() {
                   value={form.name}
                   onChange={handleChange}
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                  placeholder="Iván Parra"
+                  placeholder="nombre completo"
                 />
               </div>
             </div>
@@ -170,7 +170,7 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={handleChange}
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                placeholder="ivan@mail.com"
+                placeholder="email"
               />
             </div>
           </div>

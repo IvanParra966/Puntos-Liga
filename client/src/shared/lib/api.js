@@ -13,10 +13,12 @@ const buildHeaders = (customHeaders = {}, hasBody = false) => {
 export const apiRequest = async (path, options = {}) => {
   const { method = 'GET', body, headers = {} } = options;
 
+  const hasBody = body !== undefined && body !== null;
+
   const response = await fetch(`${API_URL}${path}`, {
     method,
-    headers: buildHeaders(headers, body !== undefined),
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    headers: buildHeaders(headers, hasBody),
+    body: hasBody ? JSON.stringify(body) : undefined,
   });
 
   const data = await response.json().catch(() => null);

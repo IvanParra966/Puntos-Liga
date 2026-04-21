@@ -39,6 +39,17 @@ function getStatusLabel(statusCode) {
   }
 }
 
+function formatRequestDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Fecha no disponible';
+
+  return date.toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
 export default function ProfileOrganizeSection() {
   const { token } = useAuth();
 
@@ -163,9 +174,13 @@ export default function ProfileOrganizeSection() {
                         <span className="text-base font-semibold text-white">
                           Ser organizador
                         </span>
-                        <p className="text-sm text-slate-400">
-                          {request.organization_name_requested || 'Sin nombre indicado'}
-                        </p>
+
+                        {request.organization_name_requested ? (
+                          <span className="text-sm text-slate-300">
+                            {request.organization_name_requested}
+                          </span>
+                        ) : null}
+
                         <span
                           className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusStyles(
                             statusCode
@@ -176,14 +191,7 @@ export default function ProfileOrganizeSection() {
                       </div>
 
                       <p className="text-sm text-slate-400">
-                        Enviada el{' '}
-                        {new Date(request.createdAt || request.created_at).toLocaleString('es-AR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        Enviada el {formatRequestDate(request.createdAt || request.created_at)}
                       </p>
                     </div>
 
@@ -221,6 +229,7 @@ export default function ProfileOrganizeSection() {
                             </p>
                           </div>
                         ) : null}
+
                         <div>
                           <p className="text-slate-500">Estado</p>
                           <p className="text-slate-200">{getStatusLabel(statusCode)}</p>

@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '../../../shared/lib/api';
+import { apiGet, apiPost, apiPatch } from '../../../shared/lib/api';
 
 export const createOrganizationRequest = async (payload, token) => {
   return apiPost('/api/organization-requests', payload, {

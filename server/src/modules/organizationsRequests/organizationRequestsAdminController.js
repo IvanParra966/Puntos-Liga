@@ -33,16 +33,14 @@ export async function getPendingOrganizationRequests(req, res) {
     }
 
     const requests = await OrganizationRequest.findAll({
-      where: { status_id: pendingStatus.id },
+      where: {
+        status_id: pendingStatus.id,
+      },
       include: [
         {
           model: User,
           as: 'user',
           attributes: ['id', 'username', 'name', 'email'],
-        },
-        {
-          model: Organization,
-          as: 'organization',
         },
         {
           model: Status,
@@ -82,8 +80,10 @@ export async function approveOrganizationRequest(req, res) {
 
     const request = await OrganizationRequest.findByPk(id, {
       include: [
-        { model: User, as: 'user' },
-        { model: Organization, as: 'organization' },
+        {
+          model: User,
+          as: 'user',
+        },
       ],
     });
 
@@ -101,119 +101,70 @@ export async function approveOrganizationRequest(req, res) {
       });
     }
 
-    if (request.request_type === 'create_organization') {
-      const baseSlug = slugify(request.organization_name_requested);
-      let finalSlug = baseSlug;
-      let counter = 1;
-
-      while (await Organization.findOne({ where: { slug: finalSlug } })) {
-        counter += 1;
-        finalSlug = `${baseSlug}-${counter}`;
-      }
-
-      const newOrganization = await Organization.create({
-        name: request.organization_name_requested,
-        slug: finalSlug,
-        description: request.message || null,
-        created_by_user_id: request.user_id,
-        status_id: approvedStatus.id,
-      });
-
-      const ownerRole = await OrganizationRoles.findOne({
-        where: { code: 'owner' },
-      });
-
-      if (!ownerRole) {
-        return res.status(500).json({
-          ok: false,
-          message: 'No existe el rol owner para organizaciones',
-        });
-      }
-
-      await OrganizationMembers.create({
-        organization_id: newOrganization.id,
-        user_id: request.user_id,
-        organization_role_id: ownerRole.id,
-        status_id: approvedStatus.id,
-        approved_by_user_id: req.user.id,
-        approved_at: new Date(),
-      });
-
-      await request.update({
-        organization_id: newOrganization.id,
-        status_id: approvedStatus.id,
-        reviewed_by_user_id: req.user.id,
-        reviewed_at: new Date(),
-      });
-
-      return res.status(200).json({
-        ok: true,
-        message: 'Solicitud aprobada y organización creada correctamente',
-        organization: newOrganization,
+    if (request.request_type !== 'become_organizer') {
+      return res.status(400).json({
+        ok: false,
+        message: 'Tipo de solicitud no soportado',
       });
     }
 
-    if (request.request_type === 'become_organizer') {
-      if (!request.organization_id) {
-        return res.status(400).json({
-          ok: false,
-          message: 'La solicitud no tiene organización asociada',
-        });
-      }
-
-      const targetRoleCode = organization_role_code || 'tournament_manager';
-
-      const organizationRole = await OrganizationRoles.findOne({
-        where: { code: targetRoleCode },
-      });
-
-      if (!organizationRole) {
-        return res.status(404).json({
-          ok: false,
-          message: 'El rol organizacional indicado no existe',
-        });
-      }
-
-      const existingMembership = await OrganizationMembers.findOne({
-        where: {
-          organization_id: request.organization_id,
-          user_id: request.user_id,
-        },
-      });
-
-      if (existingMembership) {
-        await existingMembership.update({
-          organization_role_id: organizationRole.id,
-          status_id: approvedStatus.id,
-          approved_by_user_id: req.user.id,
-          approved_at: new Date(),
-        });
-      } else {
-        await OrganizationMembers.create({
-          organization_id: request.organization_id,
-          user_id: request.user_id,
-          organization_role_id: organizationRole.id,
-          status_id: approvedStatus.id,
-          approved_by_user_id: req.user.id,
-          approved_at: new Date(),
-        });
-      }
-
-      await request.update({
-        status_id: approvedStatus.id,
-        reviewed_by_user_id: req.user.id,
-        reviewed_at: new Date(),
-      });
-
-      return res.status(200).json({
-        ok: true,
-        message: 'Solicitud aprobada correctamente',
+    if (!request.organization_name_requested?.trim()) {
+      return res.status(400).json({
+        ok: false,
+        message: 'La solicitud no tiene nombre de organización',
       });
     }
 
-    return res.status(400).json({
-      ok: false,
-      message: 'Tipo de solicitud no soportado',
+    const baseSlug = slugify(request.organization_name_requested);
+    let finalSlug = baseSlug;
+    let counter = 1;
+
+    while (await Organization.findOne({ where: { slug: finalSlug } })) {
+      counter += 1;
+      finalSlug = `${baseSlug}-${counter}`;
+    }
+
+    const newOrganization = await Organization.create({
+      name: request.organization_name_requested,
+      slug: finalSlug,
+      description: request.message || null,
+      created_by_user_id: request.user_id,
+      status_id: approvedStatus.id,
+    });
+
+    const targetRoleCode = organization_role_code || 'owner';
+
+    const organizationRole = await OrganizationRoles.findOne({
+      where: { code: targetRoleCode },
+    });
+
+    if (!organizationRole) {
+      return res.status(404).json({
+        ok: false,
+        message: 'El rol organizacional indicado no existe',
+      });
+    }
+
+    await OrganizationMembers.create({
+      organization_id: newOrganization.id,
+      user_id: request.user_id,
+      organization_role_id: organizationRole.id,
+      status_id: approvedStatus.id,
+      approved_by_user_id: req.user.id,
+      approved_at: new Date(),
+    });
+
+    await request.update({
+      organization_id: newOrganization.id,
+      status_id: approvedStatus.id,
+      reviewed_by_user_id: req.user.id,
+      reviewed_at: new Date(),
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Solicitud aprobada correctamente',
+      organization: newOrganization,
     });
   } catch (error) {
     console.error('approveOrganizationRequest error:', error);
