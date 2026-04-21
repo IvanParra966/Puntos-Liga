@@ -31,6 +31,7 @@ Status.afterSync(async () => {
     { code: 'active', name: 'Activo' },
     { code: 'inactive', name: 'Inactivo' },
     { code: 'approved', name: 'Aprobado' },
+    { code: 'cancelled', name: 'Cancelado' },
     { code: 'pending', name: 'Pendiente' },
     { code: 'rejected', name: 'Rechazado' },
     { code: 'blocked', name: 'Bloqueado' },

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createOrganizationRequest,
   getMyOrganizationRequests,
+  cancelOrganizationRequest,
 } from './organizationRequestsController.js';
 import { requireAuth } from '../../app/middlewares/requireAuth.js';
 import { requirePermission } from '../../app/middlewares/requirePermission.js';
@@ -20,6 +21,13 @@ router.get(
   requireAuth,
   requirePermission('organization_requests.create'),
   getMyOrganizationRequests
+);
+
+router.patch(
+  '/:id/cancel',
+  requireAuth,
+  requirePermission('organization_requests.create'),
+  cancelOrganizationRequest
 );
 
 export default router;

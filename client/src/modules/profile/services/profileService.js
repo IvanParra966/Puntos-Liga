@@ -5,3 +5,9 @@ export const updateMyProfile = async (payload, token) => {
     Authorization: `Bearer ${token}`,
   });
 };
+
+export const updateMyPassword = async (payload, token) => {
+  return apiPut('/api/users/me/password', payload, {
+    Authorization: `Bearer ${token}`,
+  });
+};

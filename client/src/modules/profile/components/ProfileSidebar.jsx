@@ -7,7 +7,7 @@ const tabs = [
   { key: 'organize', label: 'Organizar', icon: FiSettings },
 ];
 
-export default function ProfileSidebar({ user, roleLabel, activeTab, setActiveTab }) {
+export default function ProfileSidebar({ user, roleLabel, activeTab, onTabChange }) {
   return (
     <aside className="rounded-2xl border border-slate-800 bg-slate-950 p-3">
       <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
@@ -36,7 +36,7 @@ export default function ProfileSidebar({ user, roleLabel, activeTab, setActiveTa
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => onTabChange(tab.key)}
               className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition ${
                 isActive
                   ? 'bg-slate-800 text-white'

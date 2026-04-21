@@ -39,3 +39,7 @@ export const apiPost = (path, body, headers = {}) => {
 export const apiPut = (path, body, headers = {}) => {
   return apiRequest(path, { method: 'PUT', body, headers });
 };
+
+export const apiPatch = (path, body, headers = {}) => {
+  return apiRequest(path, { method: 'PATCH', body, headers });
+};

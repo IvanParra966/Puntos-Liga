@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiChevronDown,
   FiChevronRight,
-  FiFilePlus,
   FiLogOut,
   FiMenu,
   FiShield,
   FiUser,
   FiX,
 } from 'react-icons/fi';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../modules/auth/context/AuthContext';
 import logoLiga from '/logo.png';
 
@@ -56,13 +55,16 @@ export default function AppNavbar() {
 
   const isAdmin = adminRoles.includes(user?.role);
 
+  
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   const userMenuItems = useMemo(() => {
     const items = [
-      {
-        to: '/organization-requests/new',
-        label: 'Organizá torneos',
-        icon: FiFilePlus,
-      },
       {
         to: '/profile',
         label: 'Perfil',
@@ -101,7 +103,6 @@ export default function AppNavbar() {
         setUserMenuOpen(false);
       }
     };
-
     window.addEventListener('keydown', handleEscape);
     document.addEventListener('mousedown', handleClickOutside);
 
@@ -153,18 +154,16 @@ export default function AppNavbar() {
 
                   <FiChevronDown
                     size={16}
-                    className={`text-slate-400 transition-transform ${
-                      userMenuOpen ? 'rotate-180' : ''
-                    }`}
+                    className={`text-slate-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''
+                      }`}
                   />
                 </button>
 
                 <div
-                  className={`absolute right-0 top-[calc(100%+10px)] z-50 w-72 origin-top-right rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl transition ${
-                    userMenuOpen
-                      ? 'pointer-events-auto scale-100 opacity-100'
-                      : 'pointer-events-none scale-95 opacity-0'
-                  }`}
+                  className={`absolute right-0 top-[calc(100%+10px)] z-50 w-72 origin-top-right rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl transition ${userMenuOpen
+                    ? 'pointer-events-auto scale-100 opacity-100'
+                    : 'pointer-events-none scale-95 opacity-0'
+                    }`}
                 >
                   <div className="mb-2 rounded-xl border border-slate-800 bg-slate-900 p-3">
                     <div className="flex items-center gap-3">
@@ -203,7 +202,7 @@ export default function AppNavbar() {
                   <div className="mt-2 border-t border-slate-800 pt-2">
                     <button
                       type="button"
-                      onClick={logout}
+                      onClick={handleLogout}
                       className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm text-slate-300 transition hover:bg-red-500/10 hover:text-white"
                     >
                       <span className="flex items-center gap-3">
@@ -247,19 +246,17 @@ export default function AppNavbar() {
       </header>
 
       <div
-        className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
-          open
-            ? 'pointer-events-auto opacity-100'
-            : 'pointer-events-none opacity-0'
-        }`}
+        className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${open
+          ? 'pointer-events-auto opacity-100'
+          : 'pointer-events-none opacity-0'
+          }`}
         onClick={() => setOpen(false)}
       />
 
       <aside
         id="mobile-menu"
-        className={`fixed right-0 top-0 z-50 flex h-full w-[320px] max-w-[88vw] flex-col border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-300 lg:hidden ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed right-0 top-0 z-50 flex h-full w-[320px] max-w-[88vw] flex-col border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-300 lg:hidden ${open ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
           <div className="flex items-center gap-3">
@@ -346,7 +343,7 @@ export default function AppNavbar() {
           <div className="border-t border-slate-800 p-4">
             <button
               type="button"
-              onClick={logout}
+              onClick={handleLogout}
               className="flex w-full items-center justify-between rounded-xl border border-slate-700 px-4 py-3 text-left text-sm font-medium text-slate-200 transition hover:border-red-400/40 hover:text-white"
             >
               <span className="flex items-center gap-3">

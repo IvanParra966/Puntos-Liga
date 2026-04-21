@@ -11,3 +11,10 @@ export const getMyOrganizationRequests = async (token) => {
     Authorization: `Bearer ${token}`,
   });
 };
+
+
+export const cancelOrganizationRequest = async (requestId, token) => {
+  return apiPatch(`/api/organization-requests/${requestId}/cancel`, null, {
+    Authorization: `Bearer ${token}`,
+  });
+};

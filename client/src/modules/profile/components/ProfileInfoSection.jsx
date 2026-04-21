@@ -15,7 +15,7 @@ function Input(props) {
   return (
     <input
       {...props}
-      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
     />
   );
 }
@@ -24,16 +24,18 @@ function Select(props) {
   return (
     <select
       {...props}
-      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
     />
   );
 }
 
 export default function ProfileInfoSection({
+  user,
   profileForm,
   handleProfileChange,
   onSave,
   saving,
+  isDirty,
 }) {
   const [countries, setCountries] = useState([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
@@ -58,8 +60,13 @@ export default function ProfileInfoSection({
       title="Player Information"
       actionLabel={saving ? 'Guardando...' : 'Actualizar'}
       onAction={onSave}
+      actionDisabled={saving || !isDirty}
     >
       <div className="space-y-4">
+        <Field label="Username">
+          <Input value={user?.username || ''} disabled />
+        </Field>
+
         <Field label="First name">
           <Input
             name="first_name"
@@ -94,12 +101,8 @@ export default function ProfileInfoSection({
           </Select>
         </Field>
 
-        <Field label="In-game name">
-          <Input
-            name="in_game_name"
-            value={profileForm.in_game_name}
-            onChange={handleProfileChange}
-          />
+        <Field label="Email">
+          <Input value={user?.email || ''} disabled />
         </Field>
       </div>
     </ProfileSectionCard>
