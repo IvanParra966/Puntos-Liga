@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  FiAlertCircle,
-  FiClock,
-  FiEye,
-  FiShield,
-  FiSlash,
-  FiXCircle,
-  FiCheckCircle,
-} from 'react-icons/fi';
+import { FiEye, FiShield, FiSlash } from 'react-icons/fi';
 import { toast } from 'sonner';
 import ConfirmDialog from '../../../shared/components/ConfirmDialog';
 import { useAuth } from '../../auth/context/AuthContext';
@@ -47,17 +39,6 @@ function getStatusLabel(statusCode) {
   }
 }
 
-function getRequestTypeLabel(requestType) {
-  switch (requestType) {
-    case 'become_organizer':
-      return 'Ser organizador';
-    case 'create_organization':
-      return 'Crear organización';
-    default:
-      return requestType;
-  }
-}
-
 export default function ProfileOrganizeSection() {
   const { token } = useAuth();
 
@@ -81,8 +62,10 @@ export default function ProfileOrganizeSection() {
   };
 
   useEffect(() => {
-    loadRequests();
-  }, []);
+    if (token) {
+      loadRequests();
+    }
+  }, [token]);
 
   const hasPendingRequest = useMemo(() => {
     return requests.some((request) => request.status?.code === 'pending');
@@ -118,9 +101,9 @@ export default function ProfileOrganizeSection() {
             <h2 className="text-3xl font-bold text-white">Ser organizador</h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-300">
-              Desde esta sección podés solicitar acceso para organizar torneos,
-              crear organizaciones y administrar eventos dentro de la plataforma.
-              Tu solicitud será revisada por el equipo administrador.
+              Podés solicitar acceso para organizar torneos y administrar eventos
+              dentro de la plataforma. Tu solicitud será revisada por el equipo
+              administrador.
             </p>
           </div>
 
@@ -150,7 +133,7 @@ export default function ProfileOrganizeSection() {
         <div className="mb-6">
           <h3 className="text-2xl font-semibold text-white">Mis solicitudes</h3>
           <p className="mt-2 text-sm text-slate-400">
-            Acá vas a ver el estado de tus solicitudes y podrás consultar su detalle.
+            Acá podés ver el estado de tu solicitud y cancelarla si todavía está pendiente.
           </p>
         </div>
 
@@ -178,9 +161,11 @@ export default function ProfileOrganizeSection() {
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-base font-semibold text-white">
-                          {getRequestTypeLabel(request.request_type)}
+                          Ser organizador
                         </span>
-
+                        <p className="text-sm text-slate-400">
+                          {request.organization_name_requested || 'Sin nombre indicado'}
+                        </p>
                         <span
                           className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusStyles(
                             statusCode
@@ -192,10 +177,12 @@ export default function ProfileOrganizeSection() {
 
                       <p className="text-sm text-slate-400">
                         Enviada el{' '}
-                        {new Date(request.created_at).toLocaleDateString('es-AR', {
+                        {new Date(request.createdAt || request.created_at).toLocaleString('es-AR', {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })}
                       </p>
                     </div>
@@ -203,9 +190,7 @@ export default function ProfileOrganizeSection() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() =>
-                          setExpandedId(isExpanded ? null : request.id)
-                        }
+                        onClick={() => setExpandedId(isExpanded ? null : request.id)}
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
                       >
                         <FiEye size={16} />
@@ -228,37 +213,18 @@ export default function ProfileOrganizeSection() {
                   {isExpanded ? (
                     <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
                       <div className="space-y-3 text-sm">
-                        <div>
-                          <p className="text-slate-500">Tipo</p>
-                          <p className="text-slate-200">
-                            {getRequestTypeLabel(request.request_type)}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-slate-500">Estado</p>
-                          <p className="text-slate-200">
-                            {getStatusLabel(statusCode)}
-                          </p>
-                        </div>
-
                         {request.organization_name_requested ? (
                           <div>
-                            <p className="text-slate-500">Organización solicitada</p>
+                            <p className="text-slate-500">Nombre solicitado</p>
                             <p className="text-slate-200">
                               {request.organization_name_requested}
                             </p>
                           </div>
                         ) : null}
-
-                        {request.organization?.name ? (
-                          <div>
-                            <p className="text-slate-500">Organización</p>
-                            <p className="text-slate-200">
-                              {request.organization.name}
-                            </p>
-                          </div>
-                        ) : null}
+                        <div>
+                          <p className="text-slate-500">Estado</p>
+                          <p className="text-slate-200">{getStatusLabel(statusCode)}</p>
+                        </div>
 
                         <div>
                           <p className="text-slate-500">Mensaje</p>

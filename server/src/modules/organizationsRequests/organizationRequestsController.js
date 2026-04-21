@@ -2,48 +2,13 @@ import { OrganizationRequest, Organization, Status } from '../../database/models
 
 export async function createOrganizationRequest(req, res) {
   try {
-    const { request_type, organization_id, organization_name_requested, message } = req.body;
+    const { organization_name_requested, message } = req.body;
 
-    if (!request_type) {
-      return res.status(400).json({
-        ok: false,
-        message: 'El tipo de solicitud es obligatorio',
-      });
-    }
-
-    if (
-      request_type !== 'create_organization' &&
-      request_type !== 'become_organizer'
-    ) {
-      return res.status(400).json({
-        ok: false,
-        message: 'Tipo de solicitud inválido',
-      });
-    }
-
-    if (request_type === 'create_organization' && !organization_name_requested?.trim()) {
+    if (!organization_name_requested?.trim()) {
       return res.status(400).json({
         ok: false,
         message: 'Debés indicar el nombre de la organización',
       });
-    }
-
-    if (request_type === 'become_organizer' && !organization_id) {
-      return res.status(400).json({
-        ok: false,
-        message: 'Debés indicar la organización',
-      });
-    }
-
-    if (request_type === 'become_organizer') {
-      const organization = await Organization.findByPk(organization_id);
-
-      if (!organization) {
-        return res.status(404).json({
-          ok: false,
-          message: 'La organización no existe',
-        });
-      }
     }
 
     const pendingStatus = await Status.findOne({
@@ -73,19 +38,16 @@ export async function createOrganizationRequest(req, res) {
 
     const newRequest = await OrganizationRequest.create({
       user_id: req.user.id,
-      request_type,
-      organization_id: request_type === 'become_organizer' ? organization_id : null,
-      organization_name_requested:
-        request_type === 'create_organization'
-          ? organization_name_requested.trim()
-          : null,
+      request_type: 'become_organizer',
+      organization_id: null,
+      organization_name_requested: organization_name_requested.trim(),
       message: message?.trim() || null,
       status_id: pendingStatus.id,
     });
 
     return res.status(201).json({
       ok: true,
-      message: 'Solicitud creada correctamente',
+      message: 'Solicitud enviada correctamente',
       request: newRequest,
     });
   } catch (error) {
