@@ -125,7 +125,7 @@ export async function approveOrganizationRequest(req, res) {
     }
 
     const newOrganization = await Organization.create({
-      name: request.organization_name_requested,
+      name: request.organization_name_requested.trim(),
       slug: finalSlug,
       description: request.message || null,
       created_by_user_id: request.user_id,

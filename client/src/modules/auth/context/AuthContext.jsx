@@ -6,7 +6,6 @@ import {
 } from '../services/authService';
 
 const AuthContext = createContext(null);
-
 const TOKEN_KEY = 'puntos_liga_token';
 
 export function AuthProvider({ children }) {
@@ -46,39 +45,41 @@ export function AuthProvider({ children }) {
 
   const login = async ({ identifier, password }) => {
     const data = await loginRequest({ identifier, password });
-
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
     setUser(data.user);
-
     return data;
   };
 
-const register = async ({
-  username,
-  name,
-  email,
-  password,
-  confirmPassword,
-  country_id,
-}) => {
-  const data = await registerRequest({
+  const register = async ({
     username,
     name,
     email,
     password,
     confirmPassword,
     country_id,
-  });
+  }) => {
+    const data = await registerRequest({
+      username,
+      name,
+      email,
+      password,
+      confirmPassword,
+      country_id,
+    });
 
-  localStorage.setItem(TOKEN_KEY, data.token);
-  setToken(data.token);
-  setUser(data.user);
+    localStorage.setItem(TOKEN_KEY, data.token);
+    setToken(data.token);
+    setUser(data.user);
+    return data;
+  };
 
-  return data;
-};
   const logout = () => {
     clearSession();
+  };
+
+  const hasPermission = (permissionCode) => {
+    return user?.permissions?.includes(permissionCode) || false;
   };
 
   const value = {
@@ -91,6 +92,7 @@ const register = async ({
     register,
     logout,
     refreshMe: () => fetchMe(token),
+    hasPermission,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

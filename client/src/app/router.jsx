@@ -3,8 +3,10 @@ import HomePage from '../modules/home/pages/HomePage';
 import LoginPage from '../modules/auth/pages/LoginPage';
 import RegisterPage from '../modules/auth/pages/RegisterPage';
 import CreateOrganizationRequestPage from '../modules/organizationsRequests/pages/CreateOrganizationRequestPage';
-import MyOrganizationRequestsPage from '../modules/organizationsRequests/pages/MyOrganizationRequestsPage';
 import ProfilePage from '../modules/profile/pages/ProfilePage';
+import AdminPage from '../modules/admin/pages/AdminPage';
+import AdminOrganizationRequestsPage from '../modules/admin/pages/AdminOrganizationRequestsPage';
+import ProtectedRoute from '../shared/components/ProtectedRoute';
 
 export default function AppRouter() {
   return (
@@ -12,9 +14,43 @@ export default function AppRouter() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/organization-requests/new" element={<CreateOrganizationRequestPage />} />
-      <Route path="/organization-requests/me" element={<MyOrganizationRequestsPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/organization-requests/new"
+        element={
+          <ProtectedRoute>
+            <CreateOrganizationRequestPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requiredPermission="organization_requests.review">
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/organization-requests"
+        element={
+          <ProtectedRoute requiredPermission="organization_requests.review">
+            <AdminOrganizationRequestsPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

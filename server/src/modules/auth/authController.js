@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import { User, Roles, Status, Countries } from '../../database/models/index.js';
+import { getEffectivePermissions } from '../../shared/utils/permissionResolver.js';
 
 const signToken = (user) => {
   return jwt.sign(
@@ -16,7 +17,9 @@ const signToken = (user) => {
   );
 };
 
-const buildUserResponse = (user) => {
+const buildUserResponse = async (user) => {
+  const permissions = await getEffectivePermissions(user.id);
+
   return {
     id: user.id,
     username: user.username,
@@ -27,6 +30,7 @@ const buildUserResponse = (user) => {
     country_id: user.country_id,
     role: user.role ? user.role.code : null,
     status: user.status ? user.status.code : null,
+    permissions,
     country: user.country
       ? {
           id: user.country.id,
@@ -69,10 +73,7 @@ export const register = async (req, res) => {
 
     const existingUser = await User.findOne({
       where: {
-        [Op.or]: [
-          { email: normalizedEmail },
-          { username: normalizedUsername },
-        ],
+        [Op.or]: [{ email: normalizedEmail }, { username: normalizedUsername }],
       },
     });
 
@@ -86,7 +87,6 @@ export const register = async (req, res) => {
     const playerRole = await Roles.findOne({
       where: { code: 'player' },
     });
-
 
     const activeStatus = await Status.findOne({
       where: { code: 'active' },
@@ -111,7 +111,6 @@ export const register = async (req, res) => {
       country_id: country_id || null,
     });
 
-
     const createdUser = await User.findByPk(user.id, {
       include: [
         { model: Roles, as: 'role' },
@@ -121,12 +120,13 @@ export const register = async (req, res) => {
     });
 
     const token = signToken(createdUser);
+    const userResponse = await buildUserResponse(createdUser);
 
     return res.status(201).json({
       ok: true,
       message: 'Usuario registrado correctamente',
       token,
-      user: buildUserResponse(createdUser),
+      user: userResponse,
     });
   } catch (error) {
     console.error('register error:', error);
@@ -152,10 +152,7 @@ export const login = async (req, res) => {
 
     const user = await User.scope('withPassword').findOne({
       where: {
-        [Op.or]: [
-          { email: value.toLowerCase() },
-          { username: value },
-        ],
+        [Op.or]: [{ email: value.toLowerCase() }, { username: value }],
       },
       include: [
         { model: Roles, as: 'role' },
@@ -188,12 +185,13 @@ export const login = async (req, res) => {
     }
 
     const token = signToken(user);
+    const userResponse = await buildUserResponse(user);
 
     return res.status(200).json({
       ok: true,
       message: 'Login correcto',
       token,
-      user: buildUserResponse(user),
+      user: userResponse,
     });
   } catch (error) {
     console.error('login error:', error);
@@ -221,9 +219,11 @@ export const me = async (req, res) => {
       });
     }
 
+    const userResponse = await buildUserResponse(user);
+
     return res.status(200).json({
       ok: true,
-      user: buildUserResponse(user),
+      user: userResponse,
     });
   } catch (error) {
     console.error('me error:', error);
