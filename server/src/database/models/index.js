@@ -15,6 +15,8 @@ import { OrganizationMembersPermissions } from './organization_members_permissio
 import { Keyword } from './Keyword.js';
 import { Countries } from './countries.js';
 
+import { OrganizationNodes } from './organization_nodes.js';
+
 /* =========================
    USERS / ROLES / STATUS
 ========================= */
@@ -135,6 +137,25 @@ User.belongsTo(Countries, { foreignKey: 'country_id', as: 'country' });
 Countries.hasMany(User, { foreignKey: 'country_id', as: 'users' });
 
 /* =========================
+   ORGANIZATION NODES
+========================= */
+OrganizationNodes.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Organization.hasMany(OrganizationNodes, { foreignKey: 'organization_id', as: 'nodes' });
+
+OrganizationNodes.belongsTo(OrganizationNodes, { foreignKey: 'parent_id', as: 'parent' });
+OrganizationNodes.hasMany(OrganizationNodes, { foreignKey: 'parent_id', as: 'children' });
+
+OrganizationNodes.belongsTo(User, { foreignKey: 'created_by_user_id', as: 'createdBy' });
+User.hasMany(OrganizationNodes, { foreignKey: 'created_by_user_id', as: 'createdOrganizationNodes' });
+
+OrganizationNodes.belongsTo(Status, { foreignKey: 'status_id', as: 'status' });
+Status.hasMany(OrganizationNodes, { foreignKey: 'status_id', as: 'organizationNodes' });
+
+OrganizationNodes.belongsTo(User, { foreignKey: 'deleted_by_user_id', as: 'deletedBy' });
+User.hasMany(OrganizationNodes, { foreignKey: 'deleted_by_user_id', as: 'deletedOrganizationNodes' });
+
+
+/* =========================
    EXPORTS
 ========================= */
 
@@ -152,4 +173,5 @@ export {
   OrganizationMembersPermissions,
   Keyword,
   Countries,
+  OrganizationNodes,
 };

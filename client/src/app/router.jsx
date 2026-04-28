@@ -7,6 +7,7 @@ import ProfilePage from '../modules/profile/pages/ProfilePage';
 import AdminPage from '../modules/admin/pages/AdminPage';
 import AdminOrganizationRequestsPage from '../modules/admin/pages/AdminOrganizationRequestsPage';
 import ProtectedRoute from '../shared/components/ProtectedRoute';
+import MyOrganizationPage from '../modules/organizations/pages/MyOrganizationPage';
 
 export default function AppRouter() {
   return (
@@ -20,6 +21,15 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/organization"
+        element={
+          <ProtectedRoute>
+            <MyOrganizationPage />
           </ProtectedRoute>
         }
       />

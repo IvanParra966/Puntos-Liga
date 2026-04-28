@@ -66,7 +66,7 @@ export default function CreateOrganizationRequestPage() {
             value={form.organization_name_requested}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-            placeholder="Ej: VortexTCG Catamarca"
+            placeholder="Nombre de tu grupo"
           />
         </div>
 
