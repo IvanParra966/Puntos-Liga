@@ -17,6 +17,16 @@ import { Countries } from './countries.js';
 
 import { OrganizationNodes } from './organization_nodes.js';
 
+import { TournamentFormats } from './tournament_formats.js';
+import { TournamentPointStructures } from './tournament_point_structures.js';
+import { TournamentRegistrationModes } from './tournament_registration_modes.js';
+import { TournamentPairingSystems } from './tournament_pairing_systems.js';
+import { TournamentMatchModes } from './tournament_match_modes.js';
+import { Tournaments } from './tournaments.js';
+import { TournamentRoundRules } from './tournament_round_rules.js';
+import { TournamentStaff } from './tournament_staff.js';
+import { TournamentAccessCodes } from './tournament_access_codes.js';
+
 /* =========================
    USERS / ROLES / STATUS
 ========================= */
@@ -87,21 +97,21 @@ Permission.hasMany(RolePermissions, { foreignKey: 'permission_id', as: 'rolePerm
 ========================= */
 
 OrganizationRolePermissions.belongsTo(OrganizationRoles, {
-  foreignKey: 'organization_role_id',
-  as: 'organizationRole',
+   foreignKey: 'organization_role_id',
+   as: 'organizationRole',
 });
 OrganizationRoles.hasMany(OrganizationRolePermissions, {
-  foreignKey: 'organization_role_id',
-  as: 'organizationRolePermissions',
+   foreignKey: 'organization_role_id',
+   as: 'organizationRolePermissions',
 });
 
 OrganizationRolePermissions.belongsTo(Permission, {
-  foreignKey: 'permission_id',
-  as: 'permission',
+   foreignKey: 'permission_id',
+   as: 'permission',
 });
 Permission.hasMany(OrganizationRolePermissions, {
-  foreignKey: 'permission_id',
-  as: 'organizationRolePermissions',
+   foreignKey: 'permission_id',
+   as: 'organizationRolePermissions',
 });
 
 /* =========================
@@ -109,21 +119,21 @@ Permission.hasMany(OrganizationRolePermissions, {
 ========================= */
 
 OrganizationMembersPermissions.belongsTo(OrganizationMembers, {
-  foreignKey: 'organization_member_id',
-  as: 'organizationMember',
+   foreignKey: 'organization_member_id',
+   as: 'organizationMember',
 });
 OrganizationMembers.hasMany(OrganizationMembersPermissions, {
-  foreignKey: 'organization_member_id',
-  as: 'memberPermissions',
+   foreignKey: 'organization_member_id',
+   as: 'memberPermissions',
 });
 
 OrganizationMembersPermissions.belongsTo(Permission, {
-  foreignKey: 'permission_id',
-  as: 'permission',
+   foreignKey: 'permission_id',
+   as: 'permission',
 });
 Permission.hasMany(OrganizationMembersPermissions, {
-  foreignKey: 'permission_id',
-  as: 'organizationMemberPermissions',
+   foreignKey: 'permission_id',
+   as: 'organizationMemberPermissions',
 });
 
 /* =========================
@@ -154,24 +164,75 @@ Status.hasMany(OrganizationNodes, { foreignKey: 'status_id', as: 'organizationNo
 OrganizationNodes.belongsTo(User, { foreignKey: 'deleted_by_user_id', as: 'deletedBy' });
 User.hasMany(OrganizationNodes, { foreignKey: 'deleted_by_user_id', as: 'deletedOrganizationNodes' });
 
+/* =========================
+   TOURNAMENTS
+========================= */
+
+Tournaments.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Organization.hasMany(Tournaments, { foreignKey: 'organization_id', as: 'tournaments' });
+
+Tournaments.belongsTo(User, { foreignKey: 'created_by_user_id', as: 'createdBy' });
+User.hasMany(Tournaments, { foreignKey: 'created_by_user_id', as: 'createdTournaments' });
+
+Tournaments.belongsTo(Tournaments, { foreignKey: 'cloned_from_tournament_id', as: 'clonedFrom' });
+Tournaments.hasMany(Tournaments, { foreignKey: 'cloned_from_tournament_id', as: 'clones' });
+
+Tournaments.belongsTo(TournamentFormats, { foreignKey: 'format_id', as: 'format' });
+TournamentFormats.hasMany(Tournaments, { foreignKey: 'format_id', as: 'tournaments' });
+
+Tournaments.belongsTo(TournamentPointStructures, { foreignKey: 'point_structure_id', as: 'pointStructure' });
+TournamentPointStructures.hasMany(Tournaments, { foreignKey: 'point_structure_id', as: 'tournaments' });
+
+Tournaments.belongsTo(TournamentRegistrationModes, { foreignKey: 'registration_mode_id', as: 'registrationMode' });
+TournamentRegistrationModes.hasMany(Tournaments, { foreignKey: 'registration_mode_id', as: 'tournaments' });
+
+Tournaments.belongsTo(TournamentPairingSystems, { foreignKey: 'pairing_system_id', as: 'pairingSystem' });
+TournamentPairingSystems.hasMany(Tournaments, { foreignKey: 'pairing_system_id', as: 'tournaments' });
+
+Tournaments.belongsTo(TournamentMatchModes, { foreignKey: 'match_mode_id', as: 'matchMode' });
+TournamentMatchModes.hasMany(Tournaments, { foreignKey: 'match_mode_id', as: 'tournaments' });
+
+TournamentRoundRules.belongsTo(Tournaments, { foreignKey: 'tournament_id', as: 'tournament' });
+Tournaments.hasMany(TournamentRoundRules, { foreignKey: 'tournament_id', as: 'roundRules' });
+
+TournamentStaff.belongsTo(Tournaments, { foreignKey: 'tournament_id', as: 'tournament' });
+Tournaments.hasMany(TournamentStaff, { foreignKey: 'tournament_id', as: 'staff' });
+
+TournamentStaff.belongsTo(OrganizationMembers, { foreignKey: 'organization_member_id', as: 'organizationMember' });
+OrganizationMembers.hasMany(TournamentStaff, { foreignKey: 'organization_member_id', as: 'tournamentAssignments' });
+
+TournamentAccessCodes.belongsTo(Tournaments, { foreignKey: 'tournament_id', as: 'tournament' });
+Tournaments.hasMany(TournamentAccessCodes, { foreignKey: 'tournament_id', as: 'accessCodes' });
+
+TournamentAccessCodes.belongsTo(User, { foreignKey: 'created_by_user_id', as: 'createdBy' });
+User.hasMany(TournamentAccessCodes, { foreignKey: 'created_by_user_id', as: 'createdTournamentAccessCodes' });
 
 /* =========================
    EXPORTS
 ========================= */
 
 export {
-  User,
-  Roles,
-  Status,
-  Permission,
-  RolePermissions,
-  Organization,
-  OrganizationRequest,
-  OrganizationRoles,
-  OrganizationRolePermissions,
-  OrganizationMembers,
-  OrganizationMembersPermissions,
-  Keyword,
-  Countries,
-  OrganizationNodes,
+   User,
+   Roles,
+   Status,
+   Permission,
+   RolePermissions,
+   Organization,
+   OrganizationRequest,
+   OrganizationRoles,
+   OrganizationRolePermissions,
+   OrganizationMembers,
+   OrganizationMembersPermissions,
+   Keyword,
+   Countries,
+   OrganizationNodes,
+   Tournaments,
+   TournamentAccessCodes,
+   TournamentFormats,
+   TournamentMatchModes,
+   TournamentPairingSystems,
+   TournamentPointStructures,
+   TournamentRegistrationModes,
+   TournamentRoundRules,
+   TournamentStaff,
 };

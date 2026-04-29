@@ -4,6 +4,7 @@ import organizationRequestsAdminRoutes from '../modules/organizationsRequests/or
 import countriesRoutes from '../modules/countries/countriesRoutes.js';
 import usersRoutes from '../modules/users/usersRoutes.js';
 import organizationsRoutes from '../modules/organizations/organizationsRoutes.js';
+import tournamentsRoutes from '../modules/tournaments/tournamentsRoutes.js';
 
 export default function registerRoutes(app) {
   app.use('/api/auth', authRoutes);
@@ -12,4 +13,5 @@ export default function registerRoutes(app) {
   app.use('/api/countries', countriesRoutes);
   app.use('/api/users', usersRoutes);
   app.use('/api/organizations', organizationsRoutes);
+  app.use('/api/tournaments', tournamentsRoutes);
 }

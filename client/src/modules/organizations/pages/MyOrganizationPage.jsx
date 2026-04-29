@@ -10,11 +10,21 @@ import {
   updateOrganizationLogo,
   updateOrganizationNode,
 } from '../services/organizationsService';
+import {
+  cloneTournament,
+  createTournament,
+  getNodeTournaments,
+  getTournamentCatalogs,
+  exportTournament,
+} from '../../tournaments/services/tournamentsService';
 import OrganizationHeader from '../components/OrganizationHeader';
 import OrganizationStructureSidebar from '../components/OrganizationStructureSidebar';
 import OrganizationWorkspacePanel from '../components/OrganizationWorkspacePanel';
 import CreateFolderModal from '../components/CreateFolderModal';
 import DeleteFolderModal from '../components/DeleteFolderModal';
+import CreateTournamentModal from '../../tournaments/components/CreateTournamentModal';
+import EditFolderNameModal from '../components/EditFolderNameModal';
+import ExportTournamentModal from '../../tournaments/components/ExportTournamentModal';
 
 function buildTree(nodes, parentId = null) {
   return nodes
@@ -23,6 +33,53 @@ function buildTree(nodes, parentId = null) {
       ...node,
       children: buildTree(nodes, node.id),
     }));
+}
+
+function buildBreadcrumbs(organization, nodes, selectedNode) {
+  const items = [
+    {
+      key: 'root',
+      label: organization?.name || 'Organización',
+      node: null,
+    },
+  ];
+
+  if (!selectedNode) {
+    return items;
+  }
+
+  const map = new Map(nodes.map((node) => [node.id, node]));
+  const chain = [];
+
+  let current = selectedNode;
+
+  while (current) {
+    chain.unshift(current);
+    current = current.parent_id ? map.get(current.parent_id) : null;
+  }
+
+  return [
+    ...items,
+    ...chain.map((node) => ({
+      key: `node-${node.id}`,
+      label: node.name,
+      node,
+    })),
+  ];
+}
+
+function getAncestorIds(nodes, node) {
+  const ids = [];
+  const map = new Map(nodes.map((item) => [item.id, item]));
+
+  let current = node;
+
+  while (current?.parent_id) {
+    ids.unshift(current.parent_id);
+    current = map.get(current.parent_id);
+  }
+
+  return ids;
 }
 
 function resolveLogoUrl(logoUrl) {
@@ -52,7 +109,6 @@ export default function MyOrganizationPage() {
   const [folderParent, setFolderParent] = useState(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
 
-  const [renameValue, setRenameValue] = useState('');
   const [renaming, setRenaming] = useState(false);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -65,9 +121,30 @@ export default function MyOrganizationPage() {
   const [draggedNodeId, setDraggedNodeId] = useState(null);
   const [dragOverNodeId, setDragOverNodeId] = useState(null);
 
+  const [catalogs, setCatalogs] = useState(null);
+  const [tournaments, setTournaments] = useState([]);
+  const [tournamentModalOpen, setTournamentModalOpen] = useState(false);
+  const [creatingTournament, setCreatingTournament] = useState(false);
+  const [cloningTournamentId, setCloningTournamentId] = useState(null);
+
+  const [editNameModalOpen, setEditNameModalOpen] = useState(false);
+
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [selectedTournamentToExport, setSelectedTournamentToExport] = useState(null);
+  const [exportingTournament, setExportingTournament] = useState(false);
+
   const canManageStructure =
     membership?.organization_role?.code === 'owner' ||
     organizationPermissions.includes('organizations.update');
+
+  const loadCatalogs = async () => {
+    try {
+      const data = await getTournamentCatalogs(token);
+      setCatalogs(data);
+    } catch (error) {
+      console.error('Error loading tournament catalogs:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -119,17 +196,41 @@ export default function MyOrganizationPage() {
     }
   };
 
+  const loadTournaments = async (node) => {
+    if (!organization?.id || !node?.id) {
+      setTournaments([]);
+      return;
+    }
+
+    try {
+      const data = await getNodeTournaments(organization.id, node.id, token);
+      setTournaments(data.tournaments || []);
+    } catch (error) {
+      console.error('Error loading node tournaments:', error);
+      toast.error(error.message || 'No se pudieron cargar los torneos');
+    }
+  };
+
   useEffect(() => {
     if (token) {
       loadData();
+      loadCatalogs();
     }
   }, [token]);
 
   useEffect(() => {
-    setRenameValue(selectedNode?.name || '');
-  }, [selectedNode]);
+    if (selectedNode) {
+      loadTournaments(selectedNode);
+    } else {
+      setTournaments([]);
+    }
+  }, [selectedNode, organization?.id]);
 
   const tree = useMemo(() => buildTree(nodes), [nodes]);
+
+  const breadcrumbs = useMemo(() => {
+    return buildBreadcrumbs(organization, nodes, selectedNode);
+  }, [organization, nodes, selectedNode]);
 
   const currentChildren = useMemo(() => {
     const parentId = selectedNode ? selectedNode.id : null;
@@ -192,27 +293,6 @@ export default function MyOrganizationPage() {
     }
   };
 
-  const handleRenameNode = async () => {
-    if (!selectedNode) return;
-
-    try {
-      setRenaming(true);
-
-      await updateOrganizationNode(
-        selectedNode.id,
-        { name: renameValue },
-        token
-      );
-
-      toast.success('Carpeta actualizada correctamente');
-      await loadData();
-    } catch (error) {
-      console.error('Error renaming node:', error);
-      toast.error(error.message || 'No se pudo actualizar la carpeta');
-    } finally {
-      setRenaming(false);
-    }
-  };
 
   const handleDeleteNode = async () => {
     if (!selectedNode) return;
@@ -278,7 +358,48 @@ export default function MyOrganizationPage() {
       return;
     }
 
-    toast.info('Siguiente paso: crear torneo dentro de esta carpeta');
+    setTournamentModalOpen(true);
+  };
+
+  const handleSubmitTournament = async (formData) => {
+    if (!organization?.id || !selectedNode?.id) return;
+
+    try {
+      setCreatingTournament(true);
+
+      await createTournament(
+        {
+          ...formData,
+          organization_id: organization.id,
+          organization_node_id: selectedNode.id,
+        },
+        token
+      );
+
+      toast.success('Torneo creado correctamente');
+      setTournamentModalOpen(false);
+      await loadData();
+      await loadTournaments(selectedNode);
+    } catch (error) {
+      console.error('Error creating tournament:', error);
+      toast.error(error.message || 'No se pudo crear el torneo');
+    } finally {
+      setCreatingTournament(false);
+    }
+  };
+
+  const handleCloneTournament = async (tournamentId) => {
+    try {
+      setCloningTournamentId(tournamentId);
+      await cloneTournament(tournamentId, token);
+      toast.success('Torneo clonado correctamente');
+      await loadTournaments(selectedNode);
+    } catch (error) {
+      console.error('Error cloning tournament:', error);
+      toast.error(error.message || 'No se pudo clonar el torneo');
+    } finally {
+      setCloningTournamentId(null);
+    }
   };
 
   const handleReorderNode = async (targetNode) => {
@@ -316,6 +437,52 @@ export default function MyOrganizationPage() {
     if (!draggedNode) return false;
 
     return draggedNode.parent_id === targetNode.parent_id;
+  };
+
+  const handleNavigateBreadcrumb = (node) => {
+    if (!node) {
+      setSelectedNode(null);
+      return;
+    }
+
+    const ancestorIds = getAncestorIds(nodes, node);
+
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      ancestorIds.forEach((id) => next.add(id));
+      return next;
+    });
+
+    setSelectedNode(node);
+  };
+
+  const handleOpenExportTournament = (tournament) => {
+    setSelectedTournamentToExport(tournament);
+    setExportModalOpen(true);
+  };
+
+  const handleExportTournament = async (targetNodeId) => {
+    if (!selectedTournamentToExport) return;
+
+    try {
+      setExportingTournament(true);
+
+      await exportTournament(
+        selectedTournamentToExport.id,
+        { target_node_id: targetNodeId },
+        token
+      );
+
+      toast.success('Torneo exportado correctamente');
+      setExportModalOpen(false);
+      setSelectedTournamentToExport(null);
+      await loadTournaments(selectedNode);
+    } catch (error) {
+      console.error('Error exporting tournament:', error);
+      toast.error(error.message || 'No se pudo exportar el torneo');
+    } finally {
+      setExportingTournament(false);
+    }
   };
 
   if (loading) {
@@ -382,14 +549,16 @@ export default function MyOrganizationPage() {
             organization={organization}
             selectedNode={selectedNode}
             currentChildren={currentChildren}
+            tournaments={tournaments}
             canManageStructure={canManageStructure}
-            renameValue={renameValue}
-            renaming={renaming}
-            onRenameChange={setRenameValue}
-            onRenameNode={handleRenameNode}
+            breadcrumbs={breadcrumbs}
+            onNavigateBreadcrumb={handleNavigateBreadcrumb}
+            onOpenRenameModal={() => setEditNameModalOpen(true)}
             onCreateRootFolder={openCreateRootFolder}
             onCreateChildFolder={openCreateChildFolder}
             onCreateTournament={handleCreateTournament}
+            onCloneTournament={handleCloneTournament}
+            onOpenExportTournament={handleOpenExportTournament}
             onDeleteNode={() => setDeleteModalOpen(true)}
             onSelectNode={setSelectedNode}
           />
@@ -417,6 +586,56 @@ export default function MyOrganizationPage() {
           setDeletePassword('');
         }}
         onConfirm={handleDeleteNode}
+      />
+
+      <CreateTournamentModal
+        open={tournamentModalOpen}
+        onClose={() => setTournamentModalOpen(false)}
+        onSubmit={handleSubmitTournament}
+        loading={creatingTournament}
+        selectedNode={selectedNode}
+        catalogs={catalogs}
+      />
+
+      <EditFolderNameModal
+        open={editNameModalOpen}
+        currentName={selectedNode?.name || ''}
+        loading={renaming}
+        onClose={() => setEditNameModalOpen(false)}
+        onConfirm={async (newName) => {
+          if (!selectedNode) return;
+
+          try {
+            setRenaming(true);
+
+            await updateOrganizationNode(
+              selectedNode.id,
+              { name: newName },
+              token
+            );
+
+            toast.success('Carpeta actualizada correctamente');
+            setEditNameModalOpen(false);
+            await loadData();
+          } catch (error) {
+            console.error('Error renaming node:', error);
+            toast.error(error.message || 'No se pudo actualizar la carpeta');
+          } finally {
+            setRenaming(false);
+          }
+        }}
+
+      />
+      <ExportTournamentModal
+        open={exportModalOpen}
+        nodes={nodes}
+        tournament={selectedTournamentToExport}
+        loading={exportingTournament}
+        onClose={() => {
+          setExportModalOpen(false);
+          setSelectedTournamentToExport(null);
+        }}
+        onConfirm={handleExportTournament}
       />
     </>
   );
