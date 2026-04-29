@@ -8,6 +8,8 @@ import AdminPage from '../modules/admin/pages/AdminPage';
 import AdminOrganizationRequestsPage from '../modules/admin/pages/AdminOrganizationRequestsPage';
 import ProtectedRoute from '../shared/components/ProtectedRoute';
 import MyOrganizationPage from '../modules/organizations/pages/MyOrganizationPage';
+import TournamentDetailPage from '../modules/tournaments/pages/TournamentDetailPage';
+import TournamentPublicPage from '../modules/tournaments/pages/TournamentPublicPage';
 
 export default function AppRouter() {
   return (
@@ -15,6 +17,7 @@ export default function AppRouter() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/tournaments/:slug" element={<TournamentPublicPage />} />
 
       <Route
         path="/profile"
@@ -24,7 +27,7 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/organization"
         element={
@@ -60,6 +63,15 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/organization/tournaments/:id"
+        element={
+          <ProtectedRoute>
+            <TournamentDetailPage />
+          </ProtectedRoute>
+        }
+      />
+
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

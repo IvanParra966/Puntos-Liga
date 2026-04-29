@@ -23,6 +23,7 @@ export default function OrganizationWorkspacePanel({
   onDeleteNode,
   onSelectNode,
   onOpenExportTournament,
+  onOpenTournament,
 }) {
   const hasChildren = currentChildren.length > 0;
   const hasTournaments = tournaments.length > 0;
@@ -210,6 +211,14 @@ export default function OrganizationWorkspacePanel({
                       </div>
 
                       <div className="flex flex-col gap-2">
+
+                        <button
+                          type="button"
+                          onClick={() => onOpenTournament(tournament.id)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-cyan-400 hover:text-white"
+                        >
+                          Abrir
+                        </button>
                         <button
                           type="button"
                           onClick={() => onCloneTournament(tournament.id)}
@@ -227,6 +236,8 @@ export default function OrganizationWorkspacePanel({
                           <BiExport size={15} />
                           Exportar
                         </button>
+
+
                       </div>
                     </div>
                   </article>

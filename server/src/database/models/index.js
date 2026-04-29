@@ -27,6 +27,8 @@ import { TournamentRoundRules } from './tournament_round_rules.js';
 import { TournamentStaff } from './tournament_staff.js';
 import { TournamentAccessCodes } from './tournament_access_codes.js';
 
+import { TournamentRegistrations } from './tournament_registrations.js';
+
 /* =========================
    USERS / ROLES / STATUS
 ========================= */
@@ -208,6 +210,16 @@ TournamentAccessCodes.belongsTo(User, { foreignKey: 'created_by_user_id', as: 'c
 User.hasMany(TournamentAccessCodes, { foreignKey: 'created_by_user_id', as: 'createdTournamentAccessCodes' });
 
 /* =========================
+   TOURNAMENT REGISTRATIONS
+========================= */
+
+Tournaments.hasMany(TournamentRegistrations, { foreignKey: 'tournament_id', as: 'registrations' });
+TournamentRegistrations.belongsTo(Tournaments, { foreignKey: 'tournament_id', as: 'tournament' });
+
+User.hasMany(TournamentRegistrations, { foreignKey: 'user_id', as: 'tournamentRegistrations' });
+TournamentRegistrations.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+/* =========================
    EXPORTS
 ========================= */
 
@@ -235,4 +247,5 @@ export {
    TournamentRegistrationModes,
    TournamentRoundRules,
    TournamentStaff,
+   TournamentRegistrations
 };

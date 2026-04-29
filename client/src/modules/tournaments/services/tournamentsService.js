@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from '../../../shared/lib/api';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../../../shared/lib/api';
 
 export const getTournamentCatalogs = async (token) => {
   return apiGet('/api/tournaments/catalogs', {
@@ -41,3 +41,12 @@ export const exportTournament = async (tournamentId, payload, token) => {
     Authorization: `Bearer ${token}`,
   });
 };
+
+
+export const deleteTournament = async (tournamentId, payload, token) => {
+  return apiDelete(`/api/tournaments/${tournamentId}`, payload, {
+    Authorization: `Bearer ${token}`,
+  });
+};
+
+

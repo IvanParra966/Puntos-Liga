@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../../auth/context/AuthContext';
 import {
@@ -132,6 +133,11 @@ export default function MyOrganizationPage() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [selectedTournamentToExport, setSelectedTournamentToExport] = useState(null);
   const [exportingTournament, setExportingTournament] = useState(false);
+
+  const navigate = useNavigate();
+  const handleOpenTournament = (tournamentId) => {
+    navigate(`/organization/tournaments/${tournamentId}`);
+  };
 
   const canManageStructure =
     membership?.organization_role?.code === 'owner' ||
@@ -561,6 +567,7 @@ export default function MyOrganizationPage() {
             onOpenExportTournament={handleOpenExportTournament}
             onDeleteNode={() => setDeleteModalOpen(true)}
             onSelectNode={setSelectedNode}
+            onOpenTournament={handleOpenTournament}
           />
         </section>
       </div>

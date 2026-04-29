@@ -14,9 +14,19 @@ export const User = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    name: {
-      type: DataTypes.STRING(150),
+    first_name: {
+      type: DataTypes.STRING(100),
       allowNull: false,
+    },
+    last_name: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    full_name: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return `${this.first_name || ''} ${this.last_name || ''}`.trim();
+      },
     },
     email: {
       type: DataTypes.STRING(150),
