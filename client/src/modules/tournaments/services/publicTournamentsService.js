@@ -43,3 +43,7 @@ export const updateTournamentDecklist = async (tournamentId, payload, token) => 
     Authorization: `Bearer ${token}`,
   });
 };
+
+export const getTournamentRegistrationsBySlug = async (slug) => {
+  return apiGet(`/api/tournaments/public/${slug}/registrations`);
+};

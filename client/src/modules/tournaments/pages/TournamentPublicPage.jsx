@@ -195,11 +195,10 @@ export default function TournamentPublicPage() {
 
       await unregisterFromTournament(tournament.id, token);
 
-      const refreshedTournament = await loadTournament();
-      await Promise.all([
-        loadMyRegistration(refreshedTournament.id),
-        loadMyDecklist(refreshedTournament.id),
-      ]);
+      setMyRegistration(null);
+      setMyDecklist(null);
+
+      await loadTournament();
 
       toast.success('Tu inscripción fue cancelada');
     } catch (error) {
@@ -236,17 +235,49 @@ export default function TournamentPublicPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <section className="overflow-hidden rounded-[32px] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-6 sm:p-8">
-        <div className="mb-3 inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-300">
-          Torneo público
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-300">
+              Torneo público
+            </div>
+
+            <h1 className="text-3xl font-bold text-white sm:text-4xl">
+              {tournament.name}
+            </h1>
+
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+              Información del torneo, inscripción y detalles para los jugadores.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate(`/tournaments/${tournament.slug}/registrations`)}
+            className="group inline-flex w-full items-center justify-between gap-4 rounded-2xl border border-cyan-400/20 bg-slate-950/80 px-4 py-3 text-left shadow-lg shadow-cyan-950/20 transition hover:border-cyan-300/60 hover:bg-cyan-400/10 lg:w-auto lg:min-w-[260px]"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300 transition group-hover:bg-cyan-400/20">
+                <FiUsers size={20} />
+              </span>
+
+              <span>
+                <span className="block text-sm font-semibold text-white">
+                  Jugadores registrados
+                </span>
+
+                <span className="mt-0.5 block text-xs text-slate-400">
+                  Ver listado completo
+                </span>
+              </span>
+            </span>
+
+            <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-cyan-300">
+              {tournament.player_limit_enabled && tournament.max_players
+                ? `${tournament.registrations_count}/${tournament.max_players}`
+                : tournament.registrations_count}
+            </span>
+          </button>
         </div>
-
-        <h1 className="text-3xl font-bold text-white sm:text-4xl">
-          {tournament.name}
-        </h1>
-
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-          Información del torneo, inscripción y detalles para los jugadores.
-        </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <InfoCard
@@ -399,65 +430,13 @@ export default function TournamentPublicPage() {
                     : 'Registrarme'}
               </button>
             )}
+
+
           </div>
+
         </aside>
       </section>
 
-      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="text-xl font-semibold text-white">Jugadores registrados</h2>
-
-        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-800">
-          {tournament.registrations?.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-slate-950 text-sm">
-                <thead className="border-b border-slate-800 bg-slate-900">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-300">
-                      Jugador
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-300">
-                      Registrado
-                    </th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-300">
-                      Decklist
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {tournament.registrations.map((item) => (
-                    <tr key={item.id} className="border-b border-slate-800 last:border-b-0">
-                      <td className="px-4 py-3 text-white">
-                        {item.display_name_snapshot}
-                      </td>
-                      <td className="px-4 py-3 text-slate-300">
-                        {formatDate(item.created_at || item.createdAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-center">
-                          {item.has_decklist ? (
-                            <span className="inline-flex items-center justify-center rounded-full bg-emerald-400/15 p-2 text-emerald-300">
-                              <FiCheck size={16} />
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center justify-center rounded-full bg-rose-400/15 p-2 text-rose-300">
-                              <FiX size={16} />
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="bg-slate-950 p-4 text-sm text-slate-400">
-              Todavía no hay jugadores registrados.
-            </div>
-          )}
-        </div>
-      </section>
     </div>
   );
 }

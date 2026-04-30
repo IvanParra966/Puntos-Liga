@@ -1502,6 +1502,8 @@ export async function registerToTournament(req, res) {
       });
     }
 
+    const registeredAt = new Date();
+
     let registration;
 
     if (existingRegistration) {
@@ -1512,6 +1514,7 @@ export async function registerToTournament(req, res) {
         registration_status: 'registered',
         registration_source: registrationSource,
         registration_code_used: registrationCodeUsed,
+        registered_at: registeredAt,
       });
     } else {
       registration = await TournamentRegistrations.create({
@@ -1523,6 +1526,7 @@ export async function registerToTournament(req, res) {
         registration_status: 'registered',
         registration_source: registrationSource,
         registration_code_used: registrationCodeUsed,
+        registered_at: registeredAt,
       });
     }
 
@@ -1576,9 +1580,18 @@ export async function unregisterFromTournament(req, res) {
   try {
     const { id } = req.params;
 
+    const tournament = await Tournaments.findByPk(id);
+
+    if (!tournament) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Torneo no encontrado',
+      });
+    }
+
     const registration = await TournamentRegistrations.findOne({
       where: {
-        tournament_id: id,
+        tournament_id: tournament.id,
         user_id: req.user.id,
         registration_status: 'registered',
       },
@@ -1591,19 +1604,29 @@ export async function unregisterFromTournament(req, res) {
       });
     }
 
+    await TournamentDecklists.destroy({
+      where: {
+        tournament_id: tournament.id,
+        user_id: req.user.id,
+        tournament_registration_id: registration.id,
+      },
+      force: true,
+    });
+
     await registration.update({
       registration_status: 'cancelled',
     });
 
     return res.status(200).json({
       ok: true,
-      message: 'Tu inscripción fue cancelada correctamente',
+      message: 'Inscripción cancelada correctamente',
     });
   } catch (error) {
     console.error('unregisterFromTournament error:', error);
+
     return res.status(500).json({
       ok: false,
-      message: 'Error interno al cancelar la inscripción',
+      message: 'No se pudo cancelar la inscripción',
     });
   }
 }
@@ -1823,6 +1846,91 @@ export async function updateTournamentDecklist(req, res) {
     return res.status(500).json({
       ok: false,
       message: 'Error interno al actualizar el decklist',
+    });
+  }
+}
+
+export async function getPublicTournamentRegistrations(req, res) {
+  try {
+    const { slug } = req.params;
+
+    const tournament = await Tournaments.findOne({
+      where: { slug },
+      attributes: [
+        'id',
+        'name',
+        'slug',
+        'player_limit_enabled',
+        'max_players',
+      ],
+    });
+
+    if (!tournament) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Torneo no encontrado',
+      });
+    }
+
+    const rows = await TournamentRegistrations.findAll({
+      where: {
+        tournament_id: tournament.id,
+        registration_status: 'registered',
+      },
+      attributes: [
+        'id',
+        'first_name_snapshot',
+        'last_name_snapshot',
+        'display_name_snapshot',
+        'registration_status',
+        'registered_at',
+        'createdAt',
+      ],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'first_name', 'last_name'],
+        },
+      ],
+      order: [
+        ['registered_at', 'ASC'],
+        ['createdAt', 'ASC'],
+      ],
+    });
+
+    const registrations = rows.map((row) => {
+      const item = row.toJSON();
+
+      return {
+        id: item.id,
+        first_name_snapshot: item.first_name_snapshot,
+        last_name_snapshot: item.last_name_snapshot,
+        display_name_snapshot: item.display_name_snapshot,
+        registration_status: item.registration_status,
+
+        registered_at: item.registered_at,
+        created_at: item.createdAt,
+        createdAt: item.createdAt,
+
+        has_decklist: false,
+
+        user: item.user || null,
+      };
+    });
+
+    return res.status(200).json({
+      ok: true,
+      tournament,
+      registrations,
+    });
+  } catch (error) {
+    console.error('getPublicTournamentRegistrations error:', error);
+
+    return res.status(500).json({
+      ok: false,
+      message: 'No se pudieron cargar los jugadores registrados',
+      error: error.message,
     });
   }
 }

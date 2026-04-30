@@ -30,7 +30,10 @@ export const TournamentRegistrations = sequelize.define(
       type: DataTypes.STRING(220),
       allowNull: false,
     },
-
+    registered_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     registration_status: {
       type: DataTypes.STRING(30),
       allowNull: false,

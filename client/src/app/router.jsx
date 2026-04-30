@@ -11,6 +11,7 @@ import MyOrganizationPage from '../modules/organizations/pages/MyOrganizationPag
 import TournamentDetailPage from '../modules/tournaments/pages/TournamentDetailPage';
 import TournamentPublicPage from '../modules/tournaments/pages/TournamentPublicPage';
 import TournamentDecklistPage from '../modules/tournaments/pages/TournamentDecklistPage';
+import TournamentRegistrationsPage from '../modules/tournaments/pages/TournamentRegistrationsPage';
 
 export default function AppRouter() {
   return (
@@ -20,6 +21,7 @@ export default function AppRouter() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/tournaments/:slug" element={<TournamentPublicPage />} />
       <Route path="/tournaments/:slug/decklist" element={<TournamentDecklistPage />} />
+      <Route path="/tournaments/:slug/registrations" element={<TournamentRegistrationsPage />} />
 
       <Route
         path="/profile"
