@@ -16,6 +16,7 @@ import {
   Tournaments,
   TournamentRegistrations,
   User,
+  TournamentDecklists,
 } from '../../database/models/index.js';
 import bcrypt from 'bcryptjs';
 
@@ -128,8 +129,6 @@ async function ensureUniqueTournamentSlug(baseSlug) {
   return finalSlug;
 }
 
-
-
 function normalizeRoundRules(roundRules = []) {
   if (!Array.isArray(roundRules)) return [];
 
@@ -204,6 +203,183 @@ function isTournamentRegistrationAvailable(tournament) {
   return {
     allowed: true,
     message: null,
+  };
+}
+
+function isDecklistSubmissionAvailable(tournament) {
+  const now = new Date();
+
+  if (!tournament.is_decklist_submit_open) {
+    return {
+      allowed: false,
+      message: 'La carga de decklist está cerrada',
+    };
+  }
+
+  if (
+    tournament.decklist_closes_at &&
+    new Date(tournament.decklist_closes_at) < now
+  ) {
+    return {
+      allowed: false,
+      message: 'La carga de decklist ya cerró',
+    };
+  }
+
+  if (tournament.lifecycle_status === 'finished') {
+    return {
+      allowed: false,
+      message: 'El torneo ya finalizó',
+    };
+  }
+
+  return {
+    allowed: true,
+    message: null,
+  };
+}
+
+async function getRegisteredTournamentRegistration(tournamentId, userId) {
+  return TournamentRegistrations.findOne({
+    where: {
+      tournament_id: tournamentId,
+      user_id: userId,
+      registration_status: 'registered',
+    },
+  });
+}
+
+function buildDigimonCardImageUrl(code) {
+  if (!code) return null;
+  return `https://images.digimoncard.io/images/cards/${code}.webp`;
+}
+
+function detectDecklistInputFormat(value = '') {
+  const raw = value.trim();
+
+  if (!raw) {
+    throw new Error('Debés pegar un decklist');
+  }
+
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(raw);
+
+      if (Array.isArray(parsed)) {
+        return 'tts';
+      }
+    } catch (error) {
+      // sigue como text
+    }
+  }
+
+  return 'text';
+}
+
+function parseTextDecklist(rawInput = '') {
+  const lines = rawInput
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const cards = [];
+  let sortOrder = 1;
+
+  for (const line of lines) {
+    if (line.startsWith('//')) continue;
+
+    const match = line.match(/^(\d+)\s+(.+?)\s+([A-Z0-9]+-\d+)$/i);
+
+    if (!match) continue;
+
+    const quantity = Number(match[1]);
+    const name = match[2].trim();
+    const code = match[3].trim().toUpperCase();
+
+    if (!quantity || !code) continue;
+
+    cards.push({
+      quantity,
+      name,
+      code,
+      image_url: buildDigimonCardImageUrl(code),
+      sort_order: sortOrder,
+    });
+
+    sortOrder += 1;
+  }
+
+  return cards;
+}
+
+function parseTtsDecklist(rawInput = '') {
+  let parsed;
+
+  try {
+    parsed = JSON.parse(rawInput);
+  } catch (error) {
+    throw new Error('El decklist en formato TTS no es válido');
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error('El decklist en formato TTS no es válido');
+  }
+
+  const counts = new Map();
+  const order = [];
+
+  for (const item of parsed) {
+    if (typeof item !== 'string') continue;
+
+    const value = item.trim();
+
+    if (!value || value.startsWith('Exported from')) continue;
+
+    const code = value.toUpperCase();
+
+    if (!/^[A-Z0-9]+-\d+$/i.test(code)) continue;
+
+    if (!counts.has(code)) {
+      counts.set(code, 0);
+      order.push(code);
+    }
+
+    counts.set(code, counts.get(code) + 1);
+  }
+
+  return order.map((code, index) => ({
+    quantity: counts.get(code),
+    name: null,
+    code,
+    image_url: buildDigimonCardImageUrl(code),
+    sort_order: index + 1,
+  }));
+}
+
+function normalizeDecklistPayload(body = {}) {
+  const rawInput = body.raw_input?.trim() || '';
+
+  if (!rawInput) {
+    throw new Error('Debés pegar un decklist');
+  }
+
+  const inputFormat = detectDecklistInputFormat(rawInput);
+
+  const parsedCards =
+    inputFormat === 'tts'
+      ? parseTtsDecklist(rawInput)
+      : parseTextDecklist(rawInput);
+
+  if (parsedCards.length === 0) {
+    throw new Error('No se pudo interpretar el decklist');
+  }
+
+  return {
+    deck_name: null,
+    input_format: inputFormat,
+    raw_text: inputFormat === 'text' ? rawInput : null,
+    raw_tts: inputFormat === 'tts' ? rawInput : null,
+    parsed_cards_json: JSON.stringify(parsedCards),
   };
 }
 
@@ -1104,18 +1280,31 @@ export async function getPublicTournamentBySlug(req, res) {
         tournament_id: tournament.id,
         registration_status: 'registered',
       },
-      order: [
-        ['created_at', 'ASC'],
-        ['display_name_snapshot', 'ASC'],
-      ],
+      order: [['created_at', 'ASC']],
       attributes: [
         'id',
-        'first_name_snapshot',
-        'last_name_snapshot',
         'display_name_snapshot',
         'created_at',
       ],
     });
+
+    const decklists = await TournamentDecklists.findAll({
+      where: {
+        tournament_id: tournament.id,
+      },
+      attributes: ['tournament_registration_id'],
+    });
+
+    const decklistRegistrationIds = new Set(
+      decklists.map((item) => item.tournament_registration_id)
+    );
+
+    const serializedRegistrations = registrations.map((item) => ({
+      id: item.id,
+      display_name_snapshot: item.display_name_snapshot,
+      created_at: item.createdAt,
+      has_decklist: decklistRegistrationIds.has(item.id),
+    }));
 
     const registrationState = isTournamentRegistrationAvailable(tournament);
 
@@ -1152,8 +1341,8 @@ export async function getPublicTournamentBySlug(req, res) {
         pairingSystem: tournament.pairingSystem,
         matchMode: tournament.matchMode,
 
-        registrations_count: registrations.length,
-        registrations,
+        registrations_count: serializedRegistrations.length,
+        registrations: serializedRegistrations,
         registration_available: registrationState.allowed,
         registration_message: registrationState.message,
       },
@@ -1174,9 +1363,7 @@ export async function registerToTournament(req, res) {
     const { registration_code } = req.body;
 
     const tournament = await Tournaments.findByPk(id, {
-      include: [
-        { model: TournamentRegistrationModes, as: 'registrationMode' },
-      ],
+      include: [{ model: TournamentRegistrationModes, as: 'registrationMode' }],
     });
 
     if (!tournament) {
@@ -1202,7 +1389,7 @@ export async function registerToTournament(req, res) {
       },
     });
 
-    if (existingRegistration) {
+    if (existingRegistration?.registration_status === 'registered') {
       return res.status(400).json({
         ok: false,
         message: 'Ya estás registrado en este torneo',
@@ -1272,10 +1459,7 @@ export async function registerToTournament(req, res) {
         });
       }
 
-      if (
-        accessCode.expires_at &&
-        new Date(accessCode.expires_at) < new Date()
-      ) {
+      if (accessCode.expires_at && new Date(accessCode.expires_at) < new Date()) {
         return res.status(400).json({
           ok: false,
           message: 'El código ya venció',
@@ -1298,27 +1482,49 @@ export async function registerToTournament(req, res) {
       registrationCodeUsed = registration_code.trim();
     }
 
-    const firstName = req.user.first_name?.trim() || '';
-    const lastName = req.user.last_name?.trim() || '';
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Usuario no encontrado',
+      });
+    }
+
+    const firstName = user.first_name?.trim() || '';
+    const lastName = user.last_name?.trim() || '';
     const displayName = `${firstName} ${lastName}`.trim();
 
-    if (!displayName) {
+    if (!firstName || !lastName) {
       return res.status(400).json({
         ok: false,
         message: 'Tu cuenta debe tener nombre y apellido para registrarte',
       });
     }
 
-    const registration = await TournamentRegistrations.create({
-      tournament_id: tournament.id,
-      user_id: req.user.id,
-      first_name_snapshot: firstName,
-      last_name_snapshot: lastName,
-      display_name_snapshot: displayName,
-      registration_status: 'registered',
-      registration_source: registrationSource,
-      registration_code_used: registrationCodeUsed,
-    });
+    let registration;
+
+    if (existingRegistration) {
+      registration = await existingRegistration.update({
+        first_name_snapshot: firstName,
+        last_name_snapshot: lastName,
+        display_name_snapshot: displayName,
+        registration_status: 'registered',
+        registration_source: registrationSource,
+        registration_code_used: registrationCodeUsed,
+      });
+    } else {
+      registration = await TournamentRegistrations.create({
+        tournament_id: tournament.id,
+        user_id: req.user.id,
+        first_name_snapshot: firstName,
+        last_name_snapshot: lastName,
+        display_name_snapshot: displayName,
+        registration_status: 'registered',
+        registration_source: registrationSource,
+        registration_code_used: registrationCodeUsed,
+      });
+    }
 
     return res.status(201).json({
       ok: true,
@@ -1341,7 +1547,6 @@ export async function registerToTournament(req, res) {
     });
   }
 }
-
 export async function getMyTournamentRegistration(req, res) {
   try {
     const { id } = req.params;
@@ -1363,6 +1568,261 @@ export async function getMyTournamentRegistration(req, res) {
     return res.status(500).json({
       ok: false,
       message: 'Error interno al obtener tu inscripción',
+    });
+  }
+}
+
+export async function unregisterFromTournament(req, res) {
+  try {
+    const { id } = req.params;
+
+    const registration = await TournamentRegistrations.findOne({
+      where: {
+        tournament_id: id,
+        user_id: req.user.id,
+        registration_status: 'registered',
+      },
+    });
+
+    if (!registration) {
+      return res.status(404).json({
+        ok: false,
+        message: 'No estás registrado en este torneo',
+      });
+    }
+
+    await registration.update({
+      registration_status: 'cancelled',
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Tu inscripción fue cancelada correctamente',
+    });
+  } catch (error) {
+    console.error('unregisterFromTournament error:', error);
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno al cancelar la inscripción',
+    });
+  }
+}
+
+export async function getMyTournamentDecklist(req, res) {
+  try {
+    const { id } = req.params;
+
+    const tournament = await Tournaments.findByPk(id);
+
+    if (!tournament) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Torneo no encontrado',
+      });
+    }
+
+    const registration = await getRegisteredTournamentRegistration(
+      tournament.id,
+      req.user.id
+    );
+
+    if (!registration) {
+      return res.status(403).json({
+        ok: false,
+        message: 'Tenés que estar registrado en el torneo',
+      });
+    }
+
+    const decklist = await TournamentDecklists.findOne({
+      where: {
+        tournament_id: tournament.id,
+        user_id: req.user.id,
+      },
+    });
+
+    return res.status(200).json({
+      ok: true,
+      decklist: decklist
+        ? {
+          ...decklist.toJSON(),
+          parsed_cards_json: decklist.parsed_cards_json
+            ? JSON.parse(decklist.parsed_cards_json)
+            : null,
+        }
+        : null,
+    });
+  } catch (error) {
+    console.error('getMyTournamentDecklist error:', error);
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno al obtener tu decklist',
+    });
+  }
+}
+
+export async function createTournamentDecklist(req, res) {
+  try {
+    const { id } = req.params;
+
+    const tournament = await Tournaments.findByPk(id);
+
+    if (!tournament) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Torneo no encontrado',
+      });
+    }
+
+    const registration = await getRegisteredTournamentRegistration(
+      tournament.id,
+      req.user.id
+    );
+
+    if (!registration) {
+      return res.status(403).json({
+        ok: false,
+        message: 'Tenés que estar registrado en el torneo',
+      });
+    }
+
+    const submitState = isDecklistSubmissionAvailable(tournament);
+
+    if (!submitState.allowed) {
+      return res.status(400).json({
+        ok: false,
+        message: submitState.message,
+      });
+    }
+
+    const existingDecklist = await TournamentDecklists.findOne({
+      where: {
+        tournament_id: tournament.id,
+        user_id: req.user.id,
+      },
+    });
+
+    if (existingDecklist) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Ya tenés un decklist cargado para este torneo',
+      });
+    }
+
+    const normalizedPayload = normalizeDecklistPayload(req.body);
+
+    const decklist = await TournamentDecklists.create({
+      tournament_id: tournament.id,
+      user_id: req.user.id,
+      tournament_registration_id: registration.id,
+      ...normalizedPayload,
+      submitted_at: new Date(),
+    });
+
+    return res.status(201).json({
+      ok: true,
+      message: 'Decklist cargado correctamente',
+      decklist: {
+        ...decklist.toJSON(),
+        parsed_cards_json: decklist.parsed_cards_json
+          ? JSON.parse(decklist.parsed_cards_json)
+          : null,
+      },
+    });
+  } catch (error) {
+    console.error('createTournamentDecklist error:', error);
+
+    if (error.message) {
+      return res.status(400).json({
+        ok: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno al cargar el decklist',
+    });
+  }
+}
+
+export async function updateTournamentDecklist(req, res) {
+  try {
+    const { id } = req.params;
+
+    const tournament = await Tournaments.findByPk(id);
+
+    if (!tournament) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Torneo no encontrado',
+      });
+    }
+
+    const registration = await getRegisteredTournamentRegistration(
+      tournament.id,
+      req.user.id
+    );
+
+    if (!registration) {
+      return res.status(403).json({
+        ok: false,
+        message: 'Tenés que estar registrado en el torneo',
+      });
+    }
+
+    const submitState = isDecklistSubmissionAvailable(tournament);
+
+    if (!submitState.allowed) {
+      return res.status(400).json({
+        ok: false,
+        message: submitState.message,
+      });
+    }
+
+    const decklist = await TournamentDecklists.findOne({
+      where: {
+        tournament_id: tournament.id,
+        user_id: req.user.id,
+      },
+    });
+
+    if (!decklist) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Todavía no cargaste un decklist',
+      });
+    }
+
+    const normalizedPayload = normalizeDecklistPayload(req.body);
+
+    await decklist.update({
+      ...normalizedPayload,
+      submitted_at: decklist.submitted_at || new Date(),
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Decklist actualizado correctamente',
+      decklist: {
+        ...decklist.toJSON(),
+        parsed_cards_json: decklist.parsed_cards_json
+          ? JSON.parse(decklist.parsed_cards_json)
+          : null,
+      },
+    });
+  } catch (error) {
+    console.error('updateTournamentDecklist error:', error);
+
+    if (error.message) {
+      return res.status(400).json({
+        ok: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno al actualizar el decklist',
     });
   }
 }

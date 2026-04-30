@@ -13,8 +13,8 @@ import {
 
 function buildInitialProfileForm(user) {
   return {
-    first_name: user?.name?.split(' ')[0] || '',
-    last_name: user?.name?.split(' ').slice(1).join(' ') || '',
+    first_name: user?.first_name || '',
+    last_name: user?.last_name || '',
     country_id: user?.country_id ? String(user.country_id) : '',
   };
 }
@@ -59,6 +59,7 @@ export default function ProfilePage() {
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
+
     setProfileForm((prev) => ({
       ...prev,
       [name]: value,
@@ -67,6 +68,7 @@ export default function ProfilePage() {
 
   const handleSecurityChange = (e) => {
     const { name, value } = e.target;
+
     setSecurityForm((prev) => ({
       ...prev,
       [name]: value,
@@ -151,8 +153,8 @@ export default function ProfilePage() {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6">
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <ProfileSidebar
             user={user}
             roleLabel={roleLabel}
@@ -160,39 +162,36 @@ export default function ProfilePage() {
             onTabChange={handleTabChange}
           />
 
-          <div className="space-y-6">
-            {activeTab === 'profile' ? (
-              <ProfileInfoSection
-                user={user}
-                profileForm={profileForm}
-                handleProfileChange={handleProfileChange}
-                onSave={handleSaveProfile}
-                saving={savingProfile}
-                isDirty={isProfileDirty}
-              />
-            ) : null}
+          {activeTab === 'profile' ? (
+            <ProfileInfoSection
+              user={user}
+              profileForm={profileForm}
+              handleProfileChange={handleProfileChange}
+              onSave={handleSaveProfile}
+              saving={savingProfile}
+              isDirty={isProfileDirty}
+            />
+          ) : null}
 
-            {activeTab === 'security' ? (
-              <ProfileSecuritySection
-                user={user}
-                securityForm={securityForm}
-                handleSecurityChange={handleSecurityChange}
-                onSave={handleSavePassword}
-                saving={savingPassword}
-                isDirty={isSecurityDirty}
-              />
-            ) : null}
+          {activeTab === 'security' ? (
+            <ProfileSecuritySection
+              securityForm={securityForm}
+              handleSecurityChange={handleSecurityChange}
+              onSave={handleSavePassword}
+              saving={savingPassword}
+              isDirty={isSecurityDirty}
+            />
+          ) : null}
 
-            {activeTab === 'organize' ? <ProfileOrganizeSection /> : null}
-          </div>
+          {activeTab === 'organize' ? <ProfileOrganizeSection /> : null}
         </div>
       </div>
 
       <ConfirmDialog
         open={confirmOpen}
         title="Tenés cambios sin guardar"
-        description="Si cambiás de pestaña ahora, vas a perder los cambios que hiciste."
-        confirmText="Salir igual"
+        description="Si cambiás de sección ahora, vas a perder los cambios no guardados."
+        confirmText="Cambiar de sección"
         cancelText="Seguir editando"
         onConfirm={handleConfirmTabChange}
         onCancel={handleCancelTabChange}

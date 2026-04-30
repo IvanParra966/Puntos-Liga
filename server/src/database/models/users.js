@@ -9,45 +9,54 @@ export const User = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
+
     username: {
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
     },
+
     first_name: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
+
     last_name: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    full_name: {
-      type: DataTypes.VIRTUAL,
-      get() {
-        return `${this.first_name || ''} ${this.last_name || ''}`.trim();
-      },
-    },
+
     email: {
       type: DataTypes.STRING(150),
       allowNull: false,
       unique: true,
     },
+
     password_hash: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
+
     role_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
     status_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
     country_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
+    },
+
+    full_name: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return `${this.first_name || ''} ${this.last_name || ''}`.trim();
+      },
     },
   },
   {

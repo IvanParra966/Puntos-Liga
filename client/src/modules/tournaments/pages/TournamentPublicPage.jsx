@@ -2,17 +2,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiCalendar,
+  FiCheck,
   FiClipboard,
   FiLock,
   FiMapPin,
   FiUsers,
+  FiX,
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 import { useAuth } from '../../auth/context/AuthContext';
 import {
+  getMyTournamentDecklist,
   getMyTournamentRegistration,
   getPublicTournamentBySlug,
   registerToTournament,
+  unregisterFromTournament,
 } from '../services/publicTournamentsService';
 
 function formatDate(value) {
@@ -66,7 +70,9 @@ export default function TournamentPublicPage() {
   const [tournament, setTournament] = useState(null);
   const [registrationCode, setRegistrationCode] = useState('');
   const [registering, setRegistering] = useState(false);
+  const [unregistering, setUnregistering] = useState(false);
   const [myRegistration, setMyRegistration] = useState(null);
+  const [myDecklist, setMyDecklist] = useState(null);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
 
   const loadTournament = async () => {
@@ -86,6 +92,22 @@ export default function TournamentPublicPage() {
     return data.registration || null;
   };
 
+  const loadMyDecklist = async (tournamentId) => {
+    if (!token || !tournamentId) {
+      setMyDecklist(null);
+      return null;
+    }
+
+    try {
+      const data = await getMyTournamentDecklist(tournamentId, token);
+      setMyDecklist(data.decklist || null);
+      return data.decklist || null;
+    } catch (error) {
+      setMyDecklist(null);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const run = async () => {
       try {
@@ -96,14 +118,18 @@ export default function TournamentPublicPage() {
         if (token && loadedTournament?.id) {
           try {
             setCheckingRegistration(true);
-            await loadMyRegistration(loadedTournament.id);
+            await Promise.all([
+              loadMyRegistration(loadedTournament.id),
+              loadMyDecklist(loadedTournament.id),
+            ]);
           } catch (error) {
-            console.error('Error loading my registration:', error);
+            console.error('Error loading tournament user state:', error);
           } finally {
             setCheckingRegistration(false);
           }
         } else {
           setMyRegistration(null);
+          setMyDecklist(null);
         }
       } catch (error) {
         console.error('Error loading public tournament:', error);
@@ -123,7 +149,8 @@ export default function TournamentPublicPage() {
     return code === 'shared_code' || code === 'single_use_code';
   }, [tournament]);
 
-  const isRegistered = !!myRegistration;
+  const isRegistered = myRegistration?.registration_status === 'registered';
+  const hasMyDecklist = !!myDecklist;
 
   const handleRegister = async () => {
     if (!tournament?.id) return;
@@ -146,7 +173,10 @@ export default function TournamentPublicPage() {
       );
 
       const refreshedTournament = await loadTournament();
-      await loadMyRegistration(refreshedTournament.id);
+      await Promise.all([
+        loadMyRegistration(refreshedTournament.id),
+        loadMyDecklist(refreshedTournament.id),
+      ]);
 
       toast.success('Te registraste correctamente');
     } catch (error) {
@@ -155,6 +185,33 @@ export default function TournamentPublicPage() {
     } finally {
       setRegistering(false);
     }
+  };
+
+  const handleUnregister = async () => {
+    if (!tournament?.id || !token) return;
+
+    try {
+      setUnregistering(true);
+
+      await unregisterFromTournament(tournament.id, token);
+
+      const refreshedTournament = await loadTournament();
+      await Promise.all([
+        loadMyRegistration(refreshedTournament.id),
+        loadMyDecklist(refreshedTournament.id),
+      ]);
+
+      toast.success('Tu inscripción fue cancelada');
+    } catch (error) {
+      console.error('Error unregistering from tournament:', error);
+      toast.error(error.message || 'No se pudo cancelar la inscripción');
+    } finally {
+      setUnregistering(false);
+    }
+  };
+
+  const handleOpenDecklist = () => {
+    navigate(`/tournaments/${tournament.slug}/decklist`);
   };
 
   if (loading) {
@@ -267,7 +324,7 @@ export default function TournamentPublicPage() {
               </p>
             </div>
 
-            {needsCode ? (
+            {needsCode && !isRegistered ? (
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-300">
                   Código de registro
@@ -290,64 +347,117 @@ export default function TournamentPublicPage() {
               </div>
             ) : null}
 
-            <button
-              type="button"
-              onClick={handleRegister}
-              disabled={
-                registering ||
-                checkingRegistration ||
-                isRegistered ||
-                !tournament.registration_available ||
-                (needsCode && !registrationCode.trim())
-              }
-              className="w-full rounded-xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-70"
-            >
-              {checkingRegistration
-                ? 'Verificando...'
-                : isRegistered
-                  ? 'Ya estás registrado'
+            {isRegistered ? (
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-300">
+                  Ya estás registrado en este torneo como{' '}
+                  <span className="font-semibold text-white">
+                    {myRegistration?.display_name_snapshot}
+                  </span>
+                  .
+                </div>
+
+                {hasMyDecklist ? (
+                  <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm text-cyan-300">
+                    Ya subiste tu decklist.
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={handleOpenDecklist}
+                  className="w-full rounded-xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                >
+                  {hasMyDecklist ? 'Editar decklist' : 'Subir decklist'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleUnregister}
+                  disabled={unregistering}
+                  className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-70"
+                >
+                  {unregistering ? 'Cancelando...' : 'Cancelar inscripción'}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleRegister}
+                disabled={
+                  registering ||
+                  checkingRegistration ||
+                  !tournament.registration_available ||
+                  (needsCode && !registrationCode.trim())
+                }
+                className="w-full rounded-xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-70"
+              >
+                {checkingRegistration
+                  ? 'Verificando...'
                   : registering
                     ? 'Registrando...'
                     : 'Registrarme'}
-            </button>
-
-            {isRegistered ? (
-              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-300">
-                Ya estás registrado en este torneo como{' '}
-                <span className="font-semibold text-white">
-                  {myRegistration.display_name_snapshot}
-                </span>
-                .
-              </div>
-            ) : null}
+              </button>
+            )}
           </div>
         </aside>
       </section>
 
-      <article className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="text-xl font-semibold text-white">
-          Jugadores registrados
-        </h2>
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+        <h2 className="text-xl font-semibold text-white">Jugadores registrados</h2>
 
-        <div className="mt-5">
+        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-800">
           {tournament.registrations?.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {tournament.registrations.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-white"
-                >
-                  {item.display_name_snapshot}
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-slate-950 text-sm">
+                <thead className="border-b border-slate-800 bg-slate-900">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-300">
+                      Jugador
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-300">
+                      Registrado
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-300">
+                      Decklist
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {tournament.registrations.map((item) => (
+                    <tr key={item.id} className="border-b border-slate-800 last:border-b-0">
+                      <td className="px-4 py-3 text-white">
+                        {item.display_name_snapshot}
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">
+                        {formatDate(item.created_at || item.createdAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          {item.has_decklist ? (
+                            <span className="inline-flex items-center justify-center rounded-full bg-emerald-400/15 p-2 text-emerald-300">
+                              <FiCheck size={16} />
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center rounded-full bg-rose-400/15 p-2 text-rose-300">
+                              <FiX size={16} />
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
+            <div className="bg-slate-950 p-4 text-sm text-slate-400">
               Todavía no hay jugadores registrados.
             </div>
           )}
         </div>
-      </article>
+      </section>
     </div>
   );
 }

@@ -100,7 +100,7 @@ export default function ProfileOrganizeSection() {
   };
 
   return (
-    <>
+    <div className="space-y-6">
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
@@ -261,6 +261,6 @@ export default function ProfileOrganizeSection() {
         onCancel={() => setRequestToCancel(null)}
         loading={canceling}
       />
-    </>
+    </div>
   );
 }

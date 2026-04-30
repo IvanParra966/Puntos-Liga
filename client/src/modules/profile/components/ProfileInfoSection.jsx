@@ -4,8 +4,10 @@ import ProfileSectionCard from './ProfileSectionCard';
 
 function Field({ label, children }) {
   return (
-    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
-      <label className="text-sm font-semibold text-slate-200">{label}</label>
+    <div>
+      <label className="mb-2 block text-sm font-medium text-slate-300">
+        {label}
+      </label>
       {children}
     </div>
   );
@@ -15,7 +17,7 @@ function Input(props) {
   return (
     <input
       {...props}
-      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
+      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
     />
   );
 }
@@ -24,7 +26,7 @@ function Select(props) {
   return (
     <select
       {...props}
-      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
+      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
     />
   );
 }
@@ -57,53 +59,67 @@ export default function ProfileInfoSection({
 
   return (
     <ProfileSectionCard
-      title="Player Information"
-      actionLabel={saving ? 'Guardando...' : 'Actualizar'}
-      onAction={onSave}
-      actionDisabled={saving || !isDirty}
+      title="Información personal"
+      description="Actualizá tu nombre, apellido y país para mantener tu perfil listo para torneos e inscripciones."
     >
-      <div className="space-y-4">
+      <div className="grid gap-5 md:grid-cols-2">
         <Field label="Username">
           <Input value={user?.username || ''} disabled />
-        </Field>
-
-        <Field label="First name">
-          <Input
-            name="first_name"
-            value={profileForm.first_name}
-            onChange={handleProfileChange}
-          />
-        </Field>
-
-        <Field label="Last name">
-          <Input
-            name="last_name"
-            value={profileForm.last_name}
-            onChange={handleProfileChange}
-          />
-        </Field>
-
-        <Field label="Country">
-          <Select
-            name="country_id"
-            value={profileForm.country_id}
-            onChange={handleProfileChange}
-            disabled={loadingCountries}
-          >
-            <option value="">
-              {loadingCountries ? 'Cargando países...' : 'Seleccionar país'}
-            </option>
-            {countries.map((country) => (
-              <option key={country.id} value={String(country.id)}>
-                {country.name}
-              </option>
-            ))}
-          </Select>
         </Field>
 
         <Field label="Email">
           <Input value={user?.email || ''} disabled />
         </Field>
+
+        <Field label="Nombre">
+          <Input
+            type="text"
+            name="first_name"
+            value={profileForm.first_name}
+            onChange={handleProfileChange}
+            placeholder="Tu nombre"
+          />
+        </Field>
+
+        <Field label="Apellido">
+          <Input
+            type="text"
+            name="last_name"
+            value={profileForm.last_name}
+            onChange={handleProfileChange}
+            placeholder="Tu apellido"
+          />
+        </Field>
+
+        <div className="md:col-span-2">
+          <Field label="País">
+            <Select
+              name="country_id"
+              value={profileForm.country_id}
+              onChange={handleProfileChange}
+            >
+              <option value="">
+                {loadingCountries ? 'Cargando países...' : 'Seleccionar país'}
+              </option>
+              {countries.map((country) => (
+                <option key={country.id} value={country.id}>
+                  {country.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving || !isDirty}
+          className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-70"
+        >
+          {saving ? 'Guardando...' : 'Guardar cambios'}
+        </button>
       </div>
     </ProfileSectionCard>
   );

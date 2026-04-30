@@ -7,27 +7,31 @@ const tabs = [
   { key: 'organize', label: 'Organizar', icon: FiSettings },
 ];
 
+function getDisplayName(user) {
+  const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
+  return fullName || user?.username || 'Usuario';
+}
+
 export default function ProfileSidebar({ user, roleLabel, activeTab, onTabChange }) {
   return (
-    <aside className="rounded-2xl border border-slate-800 bg-slate-950 p-3">
-      <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <div className="flex items-center gap-3">
-          <UserAvatar user={user} />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">
-              {user?.username || 'Usuario'}
-            </p>
-            <p className="truncate text-xs text-slate-400">
-              {user?.email || 'Sin email'}
-            </p>
-            <div className="mt-2 inline-flex rounded-lg border border-slate-700 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
-              {roleLabel}
-            </div>
-          </div>
+    <aside className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+      <div className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+        <UserAvatar user={user} />
+
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-white">
+            {getDisplayName(user)}
+          </p>
+          <p className="truncate text-sm text-slate-400">
+            {user?.email || 'Sin email'}
+          </p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-cyan-300">
+            {roleLabel}
+          </p>
         </div>
       </div>
 
-      <nav className="space-y-2">
+      <div className="mt-4 space-y-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -43,12 +47,12 @@ export default function ProfileSidebar({ user, roleLabel, activeTab, onTabChange
                   : 'text-slate-300 hover:bg-slate-900 hover:text-white'
               }`}
             >
-              <Icon size={16} />
-              <span>{tab.label}</span>
+              <Icon size={18} />
+              {tab.label}
             </button>
           );
         })}
-      </nav>
+      </div>
     </aside>
   );
 }

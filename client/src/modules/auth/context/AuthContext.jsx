@@ -6,6 +6,7 @@ import {
 } from '../services/authService';
 
 const AuthContext = createContext(null);
+
 const TOKEN_KEY = 'puntos_liga_token';
 
 export function AuthProvider({ children }) {
@@ -45,15 +46,18 @@ export function AuthProvider({ children }) {
 
   const login = async ({ identifier, password }) => {
     const data = await loginRequest({ identifier, password });
+
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
     setUser(data.user);
+
     return data;
   };
 
   const register = async ({
     username,
-    name,
+    first_name,
+    last_name,
     email,
     password,
     confirmPassword,
@@ -61,7 +65,8 @@ export function AuthProvider({ children }) {
   }) => {
     const data = await registerRequest({
       username,
-      name,
+      first_name,
+      last_name,
       email,
       password,
       confirmPassword,
@@ -71,6 +76,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
     setUser(data.user);
+
     return data;
   };
 
@@ -95,7 +101,11 @@ export function AuthProvider({ children }) {
     hasPermission,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

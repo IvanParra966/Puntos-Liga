@@ -1,9 +1,17 @@
 import ProfileSectionCard from './ProfileSectionCard';
 
-function Field({ label, children }) {
+function Field({ label, children, description }) {
   return (
-    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
-      <label className="text-sm font-semibold text-slate-200">{label}</label>
+    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-start">
+      <div>
+        <label className="text-sm font-semibold text-slate-200">{label}</label>
+        {description ? (
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            {description}
+          </p>
+        ) : null}
+      </div>
+
       {children}
     </div>
   );
@@ -19,7 +27,6 @@ function Input(props) {
 }
 
 export default function ProfileSecuritySection({
-  user,
   securityForm,
   handleSecurityChange,
   onSave,
@@ -29,16 +36,16 @@ export default function ProfileSecuritySection({
   return (
     <ProfileSectionCard
       title="Seguridad"
+      description="Actualizá tu contraseña de acceso a la cuenta."
       actionLabel={saving ? 'Actualizando...' : 'Actualizar contraseña'}
       onAction={onSave}
       actionDisabled={saving || !isDirty}
     >
       <div className="space-y-4">
-        <Field label="Email">
-          <Input value={user?.email || ''} disabled />
-        </Field>
-
-        <Field label="Contraseña actual">
+        <Field
+          label="Contraseña actual"
+          description="Ingresá tu contraseña actual para confirmar el cambio."
+        >
           <Input
             type="password"
             name="current_password"
@@ -48,7 +55,10 @@ export default function ProfileSecuritySection({
           />
         </Field>
 
-        <Field label="Nueva contraseña">
+        <Field
+          label="Nueva contraseña"
+          description="Usá una contraseña de al menos 6 caracteres."
+        >
           <Input
             type="password"
             name="new_password"
@@ -58,7 +68,10 @@ export default function ProfileSecuritySection({
           />
         </Field>
 
-        <Field label="Confirmar contraseña">
+        <Field
+          label="Confirmar contraseña"
+          description="Repetí la nueva contraseña exactamente igual."
+        >
           <Input
             type="password"
             name="confirm_password"

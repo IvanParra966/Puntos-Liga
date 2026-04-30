@@ -28,6 +28,7 @@ import { TournamentStaff } from './tournament_staff.js';
 import { TournamentAccessCodes } from './tournament_access_codes.js';
 
 import { TournamentRegistrations } from './tournament_registrations.js';
+import { TournamentDecklists } from './tournament_decklists.js';
 
 /* =========================
    USERS / ROLES / STATUS
@@ -220,6 +221,19 @@ User.hasMany(TournamentRegistrations, { foreignKey: 'user_id', as: 'tournamentRe
 TournamentRegistrations.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 /* =========================
+   TOURNAMENT DECKLISTS
+========================= */
+
+Tournaments.hasMany(TournamentDecklists, { foreignKey: 'tournament_id', as: 'decklists' });
+TournamentDecklists.belongsTo(Tournaments, { foreignKey: 'tournament_id', as: 'tournament' });
+
+User.hasMany(TournamentDecklists, { foreignKey: 'user_id', as: 'tournamentDecklists' });
+TournamentDecklists.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+TournamentRegistrations.hasOne(TournamentDecklists, { foreignKey: 'tournament_registration_id', as: 'decklist' });
+TournamentDecklists.belongsTo(TournamentRegistrations, { foreignKey: 'tournament_registration_id', as: 'registration' });
+
+/* =========================
    EXPORTS
 ========================= */
 
@@ -247,5 +261,6 @@ export {
    TournamentRegistrationModes,
    TournamentRoundRules,
    TournamentStaff,
-   TournamentRegistrations
+   TournamentRegistrations,
+   TournamentDecklists,
 };

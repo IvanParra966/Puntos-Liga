@@ -5,7 +5,9 @@ function buildUserResponse(user) {
   return {
     id: user.id,
     username: user.username,
-    name: user.name,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    full_name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
     email: user.email,
     role_id: user.role_id,
     status_id: user.status_id,
@@ -37,10 +39,12 @@ export async function updateMyProfile(req, res) {
       });
     }
 
-    const fullName = [first_name?.trim(), last_name?.trim()]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
+    if (!first_name?.trim() || !last_name?.trim()) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Nombre y apellido son obligatorios',
+      });
+    }
 
     if (country_id) {
       const country = await Countries.findByPk(country_id);
@@ -54,7 +58,8 @@ export async function updateMyProfile(req, res) {
     }
 
     await user.update({
-      name: fullName || user.name,
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
       country_id: country_id || null,
     });
 

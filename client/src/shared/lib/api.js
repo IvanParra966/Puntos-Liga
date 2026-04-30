@@ -46,6 +46,7 @@ export const apiPatch = (path, body, headers = {}) => {
   return apiRequest(path, { method: 'PATCH', body, headers });
 };
 
-export const apiDelete = (path,body, headers = {}) => {
+export const apiDelete = (path, body, headers = {}) => {
   return apiRequest(path, { method: 'DELETE',body, headers });
 };
+

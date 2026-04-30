@@ -6,9 +6,9 @@ import { getCountries } from '../../countries/services/countriesService';
 
 function InputIcon({ children }) {
   return (
-    <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
+    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
       {children}
-    </div>
+    </span>
   );
 }
 
@@ -18,7 +18,8 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({
     username: '',
-    name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     country_id: '',
     password: '',
@@ -34,7 +35,8 @@ export default function RegisterPage() {
   const formReady = useMemo(() => {
     return (
       form.username &&
-      form.name &&
+      form.first_name &&
+      form.last_name &&
       form.email &&
       form.country_id &&
       form.password &&
@@ -106,169 +108,225 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-xl items-center">
-      <section className="w-full rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold text-white">Crear cuenta</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Completá tus datos para empezar dentro de VortexTCG.
-          </p>
-        </div>
+    <div className="mx-auto flex min-h-[calc(100vh-120px)] w-full max-w-6xl items-center justify-center px-4 py-10">
+      <div className="grid w-full overflow-hidden rounded-[32px] border border-slate-800 bg-slate-900 shadow-[0_20px_60px_rgba(0,0,0,0.35)] lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="hidden h-full flex-col justify-between border-r border-slate-800 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_45%),linear-gradient(135deg,#050b16_0%,#0f172a_100%)] p-10 lg:flex">
+          <div>
+            <span className="inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">
+              VortexTCG
+            </span>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                Usuario
-              </label>
-              <div className="relative">
-                <InputIcon>
-                  <FiUser size={18} />
-                </InputIcon>
-                <input
-                  type="text"
-                  name="username"
-                  value={form.username}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                  placeholder="username"
-                />
-              </div>
-            </div>
+            <h1 className="mt-6 max-w-md text-4xl font-black leading-tight text-white">
+              Armá tu cuenta y empezá a competir.
+            </h1>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                Nombre completo
-              </label>
-              <div className="relative">
-                <InputIcon>
-                  <FiUser size={18} />
-                </InputIcon>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                  placeholder="nombre completo"
-                />
-              </div>
-            </div>
+            <p className="mt-5 max-w-lg text-sm leading-7 text-slate-300">
+              Registrate para entrar al ecosistema de torneos, seguir tu perfil
+              competitivo y administrar tus datos de jugador desde el primer día.
+            </p>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">
-              Email
-            </label>
-            <div className="relative">
-              <InputIcon>
-                <FiMail size={18} />
-              </InputIcon>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                placeholder="email"
-              />
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+              <p className="text-sm font-semibold text-white">Perfil prolijo desde el inicio</p>
+              <p className="mt-1 text-sm text-slate-400">
+                Tu nombre y apellido quedan separados correctamente para torneos,
+                perfil y futuras inscripciones.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+              <p className="text-sm font-semibold text-white">Tu país y tu identidad</p>
+              <p className="mt-1 text-sm text-slate-400">
+                Mantené tu cuenta lista para rankings, torneos y vista pública.
+              </p>
             </div>
           </div>
+        </section>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">
-              País
-            </label>
-            <div className="relative">
-              <InputIcon>
-                <FiGlobe size={18} />
-              </InputIcon>
-              <select
-                name="country_id"
-                value={form.country_id}
-                onChange={handleChange}
-                disabled={countriesLoading}
-                className="w-full appearance-none rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400 disabled:opacity-70"
+        <section className="p-6 sm:p-8 lg:p-10">
+          <div className="mx-auto w-full max-w-xl">
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-white">Crear cuenta</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Completá tus datos para empezar dentro de VortexTCG.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Usuario
+                  </label>
+                  <div className="relative">
+                    <InputIcon>
+                      <FiUser size={18} />
+                    </InputIcon>
+                    <input
+                      type="text"
+                      name="username"
+                      value={form.username}
+                      onChange={handleChange}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3.5 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                      placeholder="Tu usuario"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Nombre
+                  </label>
+                  <div className="relative">
+                    <InputIcon>
+                      <FiUser size={18} />
+                    </InputIcon>
+                    <input
+                      type="text"
+                      name="first_name"
+                      value={form.first_name}
+                      onChange={handleChange}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3.5 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                      placeholder="Tu nombre"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Apellido
+                  </label>
+                  <div className="relative">
+                    <InputIcon>
+                      <FiUser size={18} />
+                    </InputIcon>
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={form.last_name}
+                      onChange={handleChange}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3.5 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                      placeholder="Tu apellido"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <InputIcon>
+                      <FiMail size={18} />
+                    </InputIcon>
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3.5 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                      placeholder="tu@email.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    País
+                  </label>
+                  <div className="relative">
+                    <InputIcon>
+                      <FiGlobe size={18} />
+                    </InputIcon>
+                    <select
+                      name="country_id"
+                      value={form.country_id}
+                      onChange={handleChange}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3.5 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                    >
+                      <option value="">
+                        {countriesLoading ? 'Cargando países...' : 'Seleccioná tu país'}
+                      </option>
+                      {countries.map((country) => (
+                        <option key={country.id} value={country.id}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {countriesError ? (
+                    <p className="mt-2 text-sm text-rose-400">{countriesError}</p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <InputIcon>
+                      <FiLock size={18} />
+                    </InputIcon>
+                    <input
+                      type="password"
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3.5 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Confirmar contraseña
+                  </label>
+                  <div className="relative">
+                    <InputIcon>
+                      <FiLock size={18} />
+                    </InputIcon>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={form.confirmPassword}
+                      onChange={handleChange}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3.5 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
+                      placeholder="Repetí tu contraseña"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {error ? (
+                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                  {error}
+                </div>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={!formReady || submitting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-4 py-3.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-70"
               >
-                <option value="">
-                  {countriesLoading ? 'Cargando países...' : 'Seleccioná tu país'}
-                </option>
-                {countries.map((country) => (
-                  <option key={country.id} value={country.id}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {submitting ? 'Creando cuenta...' : 'Crear cuenta'}
+                {!submitting ? <FiChevronRight size={18} /> : null}
+              </button>
+            </form>
 
-            {countriesError ? (
-              <p className="mt-2 text-sm text-amber-300">{countriesError}</p>
-            ) : null}
+            <p className="mt-6 text-center text-sm text-slate-400">
+              ¿Ya tenés cuenta?{' '}
+              <Link
+                to="/login"
+                className="font-semibold text-cyan-300 transition hover:text-cyan-200"
+              >
+                Ingresá acá
+              </Link>
+            </p>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                Contraseña
-              </label>
-              <div className="relative">
-                <InputIcon>
-                  <FiLock size={18} />
-                </InputIcon>
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                  placeholder="Mínimo 6 caracteres"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                Confirmar contraseña
-              </label>
-              <div className="relative">
-                <InputIcon>
-                  <FiLock size={18} />
-                </InputIcon>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 py-3 pl-12 pr-4 text-white outline-none transition focus:border-cyan-400"
-                  placeholder="Repetí tu contraseña"
-                />
-              </div>
-            </div>
-          </div>
-
-          {error ? (
-            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-              {error}
-            </div>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={submitting || countriesLoading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            <span>{submitting ? 'Creando cuenta...' : 'Crear cuenta'}</span>
-            {!submitting ? <FiChevronRight size={18} /> : null}
-          </button>
-        </form>
-
-        <p className="mt-6 text-sm text-slate-400">
-          ¿Ya tenés cuenta?{' '}
-          <Link to="/login" className="font-medium text-cyan-300 hover:text-cyan-200">
-            Ingresá acá
-          </Link>
-        </p>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

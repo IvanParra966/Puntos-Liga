@@ -40,7 +40,7 @@ export async function getPendingOrganizationRequests(req, res) {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'username', 'name', 'email'],
+          attributes: ['id', 'username', 'first_name', 'last_name', 'email'],
         },
         {
           model: Status,

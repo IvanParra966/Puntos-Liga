@@ -10,6 +10,7 @@ import ProtectedRoute from '../shared/components/ProtectedRoute';
 import MyOrganizationPage from '../modules/organizations/pages/MyOrganizationPage';
 import TournamentDetailPage from '../modules/tournaments/pages/TournamentDetailPage';
 import TournamentPublicPage from '../modules/tournaments/pages/TournamentPublicPage';
+import TournamentDecklistPage from '../modules/tournaments/pages/TournamentDecklistPage';
 
 export default function AppRouter() {
   return (
@@ -18,6 +19,7 @@ export default function AppRouter() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/tournaments/:slug" element={<TournamentPublicPage />} />
+      <Route path="/tournaments/:slug/decklist" element={<TournamentDecklistPage />} />
 
       <Route
         path="/profile"

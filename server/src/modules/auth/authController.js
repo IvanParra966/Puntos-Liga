@@ -23,7 +23,9 @@ const buildUserResponse = async (user) => {
   return {
     id: user.id,
     username: user.username,
-    name: user.name,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    full_name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
     email: user.email,
     role_id: user.role_id,
     status_id: user.status_id,
@@ -45,9 +47,24 @@ const buildUserResponse = async (user) => {
 
 export const register = async (req, res) => {
   try {
-    const { username, name, email, password, confirmPassword, country_id } = req.body;
+    const {
+      username,
+      first_name,
+      last_name,
+      email,
+      password,
+      confirmPassword,
+      country_id,
+    } = req.body;
 
-    if (!username || !name || !email || !password || !confirmPassword) {
+    if (
+      !username ||
+      !first_name ||
+      !last_name ||
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
       return res.status(400).json({
         ok: false,
         message: 'Todos los campos son obligatorios',
@@ -70,6 +87,8 @@ export const register = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedUsername = username.trim();
+    const normalizedFirstName = first_name.trim();
+    const normalizedLastName = last_name.trim();
 
     const existingUser = await User.findOne({
       where: {
@@ -103,7 +122,8 @@ export const register = async (req, res) => {
 
     const user = await User.create({
       username: normalizedUsername,
-      name: name.trim(),
+      first_name: normalizedFirstName,
+      last_name: normalizedLastName,
       email: normalizedEmail,
       password_hash: passwordHash,
       role_id: playerRole.id,
