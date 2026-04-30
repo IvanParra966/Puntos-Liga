@@ -1856,13 +1856,7 @@ export async function getPublicTournamentRegistrations(req, res) {
 
     const tournament = await Tournaments.findOne({
       where: { slug },
-      attributes: [
-        'id',
-        'name',
-        'slug',
-        'player_limit_enabled',
-        'max_players',
-      ],
+      attributes: ['id', 'name', 'slug', 'max_players', 'player_limit_enabled'],
     });
 
     if (!tournament) {
@@ -1872,65 +1866,51 @@ export async function getPublicTournamentRegistrations(req, res) {
       });
     }
 
-    const rows = await TournamentRegistrations.findAll({
+    const registrations = await TournamentRegistrations.findAll({
       where: {
         tournament_id: tournament.id,
         registration_status: 'registered',
       },
-      attributes: [
-        'id',
-        'first_name_snapshot',
-        'last_name_snapshot',
-        'display_name_snapshot',
-        'registration_status',
-        'registered_at',
-        'createdAt',
-      ],
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'username', 'first_name', 'last_name'],
-        },
-      ],
-      order: [
-        ['registered_at', 'ASC'],
-        ['createdAt', 'ASC'],
-      ],
+      attributes: ['id', 'display_name_snapshot', 'created_at'],
+      order: [['created_at', 'ASC']],
+      raw: true,
     });
 
-    const registrations = rows.map((row) => {
-      const item = row.toJSON();
-
-      return {
-        id: item.id,
-        first_name_snapshot: item.first_name_snapshot,
-        last_name_snapshot: item.last_name_snapshot,
-        display_name_snapshot: item.display_name_snapshot,
-        registration_status: item.registration_status,
-
-        registered_at: item.registered_at,
-        created_at: item.createdAt,
-        createdAt: item.createdAt,
-
-        has_decklist: false,
-
-        user: item.user || null,
-      };
+    const decklists = await TournamentDecklists.findAll({
+      where: {
+        tournament_id: tournament.id,
+      },
+      attributes: ['tournament_registration_id'],
+      raw: true,
     });
+
+    const decklistRegistrationIds = new Set(
+      decklists.map((item) => Number(item.tournament_registration_id))
+    );
+
+    const serializedRegistrations = registrations.map((item) => ({
+      id: item.id,
+      display_name_snapshot: item.display_name_snapshot,
+      registered_at: item.created_at,
+      has_decklist: decklistRegistrationIds.has(Number(item.id)),
+    }));
 
     return res.status(200).json({
       ok: true,
-      tournament,
-      registrations,
+      tournament: {
+        id: tournament.id,
+        name: tournament.name,
+        slug: tournament.slug,
+        max_players: tournament.max_players,
+        player_limit_enabled: tournament.player_limit_enabled,
+      },
+      registrations: serializedRegistrations,
     });
   } catch (error) {
     console.error('getPublicTournamentRegistrations error:', error);
-
     return res.status(500).json({
       ok: false,
-      message: 'No se pudieron cargar los jugadores registrados',
-      error: error.message,
+      message: 'Error interno al obtener los jugadores registrados',
     });
   }
 }

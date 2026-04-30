@@ -42,9 +42,7 @@ router.delete('/:id', requireAuth, deleteTournament);
 router.post('/:id/register', requireAuth, registerToTournament);
 router.get('/:id/my-registration', requireAuth, getMyTournamentRegistration);
 
-router.delete('/tournaments/:id/register', requireAuth, unregisterFromTournament);
 router.delete('/:id/register', requireAuth, unregisterFromTournament);
-
 
 router.get('/:id/my-decklist', requireAuth, getMyTournamentDecklist);
 router.post('/:id/decklist', requireAuth, createTournamentDecklist);
