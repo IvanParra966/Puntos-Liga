@@ -249,67 +249,45 @@ async function getRegisteredTournamentRegistration(tournamentId, userId) {
   });
 }
 
+function createHttpError(message, statusCode = 400, details = null) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+
+  if (details) {
+    error.details = details;
+  }
+
+  return error;
+}
+
+const DIGIMON_TTS_CODE_REGEX = /^[A-Z0-9]+-\d+(?:_[A-Z0-9]+)?$/i;
+
 function buildDigimonCardImageUrl(code) {
   if (!code) return null;
+
   return `https://images.digimoncard.io/images/cards/${code}.webp`;
 }
 
 function detectDecklistInputFormat(value = '') {
   const raw = value.trim();
 
-  if (!raw) {
-    throw new Error('Debés pegar un decklist');
+  if (!raw) return null;
+
+  if (!raw.startsWith('[') || !raw.endsWith(']')) {
+    return null;
   }
 
-  if (raw.startsWith('[') && raw.endsWith(']')) {
-    try {
-      const parsed = JSON.parse(raw);
+  try {
+    const parsed = JSON.parse(raw);
 
-      if (Array.isArray(parsed)) {
-        return 'tts';
-      }
-    } catch (error) {
-      // sigue como text
+    if (Array.isArray(parsed)) {
+      return 'tts';
     }
+  } catch (error) {
+    return null;
   }
 
-  return 'text';
-}
-
-function parseTextDecklist(rawInput = '') {
-  const lines = rawInput
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  const cards = [];
-  let sortOrder = 1;
-
-  for (const line of lines) {
-    if (line.startsWith('//')) continue;
-
-    const match = line.match(/^(\d+)\s+(.+?)\s+([A-Z0-9]+-\d+)$/i);
-
-    if (!match) continue;
-
-    const quantity = Number(match[1]);
-    const name = match[2].trim();
-    const code = match[3].trim().toUpperCase();
-
-    if (!quantity || !code) continue;
-
-    cards.push({
-      quantity,
-      name,
-      code,
-      image_url: buildDigimonCardImageUrl(code),
-      sort_order: sortOrder,
-    });
-
-    sortOrder += 1;
-  }
-
-  return cards;
+  return null;
 }
 
 function parseTtsDecklist(rawInput = '') {
@@ -318,26 +296,41 @@ function parseTtsDecklist(rawInput = '') {
   try {
     parsed = JSON.parse(rawInput);
   } catch (error) {
-    throw new Error('El decklist en formato TTS no es válido');
+    throw createHttpError('Solo se acepta formato TTS');
   }
 
   if (!Array.isArray(parsed)) {
-    throw new Error('El decklist en formato TTS no es válido');
+    throw createHttpError('Solo se acepta formato TTS');
   }
 
   const counts = new Map();
   const order = [];
+  const errors = [];
 
-  for (const item of parsed) {
-    if (typeof item !== 'string') continue;
+  parsed.forEach((item, index) => {
+    if (typeof item !== 'string') {
+      errors.push({
+        line: index + 1,
+        value: item,
+        message: 'Cada entrada del TTS debe ser un código de carta en texto',
+      });
+      return;
+    }
 
     const value = item.trim();
 
-    if (!value || value.startsWith('Exported from')) continue;
+    if (!value || value.toUpperCase().startsWith('EXPORTED FROM')) return;
 
     const code = value.toUpperCase();
 
-    if (!/^[A-Z0-9]+-\d+$/i.test(code)) continue;
+    if (!DIGIMON_TTS_CODE_REGEX.test(code)) {
+      errors.push({
+        line: index + 1,
+        value,
+        message: `Código inválido: ${value}`,
+      });
+      return;
+    }
 
     if (!counts.has(code)) {
       counts.set(code, 0);
@@ -345,6 +338,18 @@ function parseTtsDecklist(rawInput = '') {
     }
 
     counts.set(code, counts.get(code) + 1);
+  });
+
+  if (errors.length > 0) {
+    throw createHttpError(
+      'El decklist TTS contiene códigos inválidos',
+      400,
+      errors
+    );
+  }
+
+  if (order.length === 0) {
+    throw createHttpError('El decklist TTS no tiene cartas válidas');
   }
 
   return order.map((code, index) => ({
@@ -360,26 +365,37 @@ function normalizeDecklistPayload(body = {}) {
   const rawInput = body.raw_input?.trim() || '';
 
   if (!rawInput) {
-    throw new Error('Debés pegar un decklist');
+    throw createHttpError('Debés pegar un decklist en formato TTS');
   }
 
   const inputFormat = detectDecklistInputFormat(rawInput);
 
-  const parsedCards =
-    inputFormat === 'tts'
-      ? parseTtsDecklist(rawInput)
-      : parseTextDecklist(rawInput);
-
-  if (parsedCards.length === 0) {
-    throw new Error('No se pudo interpretar el decklist');
+  if (inputFormat !== 'tts') {
+    throw createHttpError('Solo se acepta formato TTS');
   }
+
+  const parsedCards = parseTtsDecklist(rawInput);
 
   return {
     deck_name: null,
-    input_format: inputFormat,
-    raw_text: inputFormat === 'text' ? rawInput : null,
-    raw_tts: inputFormat === 'tts' ? rawInput : null,
+    input_format: 'tts',
+    raw_text: null,
+    raw_tts: rawInput,
     parsed_cards_json: JSON.stringify(parsedCards),
+  };
+}
+
+function serializeDecklist(decklist) {
+  if (!decklist) return null;
+
+  const json = decklist.toJSON ? decklist.toJSON() : decklist;
+
+  return {
+    ...json,
+    raw_input: json.raw_tts || json.raw_text || '',
+    parsed_cards_json: json.parsed_cards_json
+      ? JSON.parse(json.parsed_cards_json)
+      : null,
   };
 }
 
@@ -1565,7 +1581,7 @@ export async function getMyTournamentRegistration(req, res) {
     return res.status(200).json({
       ok: true,
       registration,
-      is_registered: !!registration,
+      is_registered: registration?.registration_status === 'registered',
     });
   } catch (error) {
     console.error('getMyTournamentRegistration error:', error);
@@ -1665,14 +1681,7 @@ export async function getMyTournamentDecklist(req, res) {
 
     return res.status(200).json({
       ok: true,
-      decklist: decklist
-        ? {
-          ...decklist.toJSON(),
-          parsed_cards_json: decklist.parsed_cards_json
-            ? JSON.parse(decklist.parsed_cards_json)
-            : null,
-        }
-        : null,
+      decklist: serializeDecklist(decklist),
     });
   } catch (error) {
     console.error('getMyTournamentDecklist error:', error);
@@ -1744,20 +1753,16 @@ export async function createTournamentDecklist(req, res) {
     return res.status(201).json({
       ok: true,
       message: 'Decklist cargado correctamente',
-      decklist: {
-        ...decklist.toJSON(),
-        parsed_cards_json: decklist.parsed_cards_json
-          ? JSON.parse(decklist.parsed_cards_json)
-          : null,
-      },
+      decklist: serializeDecklist(decklist),
     });
   } catch (error) {
     console.error('createTournamentDecklist error:', error);
 
     if (error.message) {
-      return res.status(400).json({
+      return res.status(error.statusCode || 400).json({
         ok: false,
         message: error.message,
+        details: error.details || [],
       });
     }
 
@@ -1826,20 +1831,16 @@ export async function updateTournamentDecklist(req, res) {
     return res.status(200).json({
       ok: true,
       message: 'Decklist actualizado correctamente',
-      decklist: {
-        ...decklist.toJSON(),
-        parsed_cards_json: decklist.parsed_cards_json
-          ? JSON.parse(decklist.parsed_cards_json)
-          : null,
-      },
+      decklist: serializeDecklist(decklist),
     });
   } catch (error) {
     console.error('updateTournamentDecklist error:', error);
 
     if (error.message) {
-      return res.status(400).json({
+      return res.status(error.statusCode || 400).json({
         ok: false,
         message: error.message,
+        details: error.details || [],
       });
     }
 

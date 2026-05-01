@@ -63,17 +63,38 @@ export default function TournamentDecklistPage() {
   const loadPage = async () => {
     const tournamentData = await getPublicTournamentBySlug(slug);
     const tournamentLoaded = tournamentData.tournament;
+
     setTournament(tournamentLoaded);
 
-    const [registrationData, decklistData] = await Promise.all([
-      getMyTournamentRegistration(tournamentLoaded.id, token),
-      getMyTournamentDecklist(tournamentLoaded.id, token),
-    ]);
+    const registrationData = await getMyTournamentRegistration(
+      tournamentLoaded.id,
+      token
+    );
 
-    setRegistration(registrationData.registration || null);
-    setExistingDecklist(decklistData.decklist || null);
+    const registrationLoaded = registrationData.registration || null;
 
-    // Importante: no rellenar el textarea con lo ya cargado
+    setRegistration(registrationLoaded);
+
+    const userIsRegistered =
+      registrationLoaded?.registration_status === 'registered';
+
+    if (!userIsRegistered) {
+      setExistingDecklist(null);
+      setRawInput('');
+      return;
+    }
+
+    try {
+      const decklistData = await getMyTournamentDecklist(
+        tournamentLoaded.id,
+        token
+      );
+
+      setExistingDecklist(decklistData.decklist || null);
+    } catch (error) {
+      setExistingDecklist(null);
+    }
+
     setRawInput('');
   };
 

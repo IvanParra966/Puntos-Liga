@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiCalendar,
@@ -204,58 +204,90 @@ export default function TournamentPublicPage() {
     }
   };
 
-  const reloadAll = async () => {
-    const loadedTournament = await loadTournament();
-
-    await Promise.all([
-      loadRegistrations(),
-      token && loadedTournament?.id
-        ? loadMyRegistration(loadedTournament.id)
-        : Promise.resolve(null),
-      token && loadedTournament?.id
-        ? loadMyDecklist(loadedTournament.id)
-        : Promise.resolve(null),
-    ]);
-
-    return loadedTournament;
-  };
-
-  useEffect(() => {
-    const run = async () => {
+  const loadPageData = useCallback(
+    async ({ showMainLoading = false } = {}) => {
       try {
-        setLoading(true);
+        if (showMainLoading) {
+          setLoading(true);
+        }
 
-        const loadedTournament = await loadTournament();
-        await loadRegistrations();
+        const tournamentData = await getPublicTournamentBySlug(slug);
+        const loadedTournament = tournamentData.tournament;
 
-        if (token && loadedTournament?.id) {
-          try {
-            setCheckingRegistration(true);
-            await Promise.all([
-              loadMyRegistration(loadedTournament.id),
-              loadMyDecklist(loadedTournament.id),
-            ]);
-          } catch (error) {
-            console.error('Error loading tournament user state:', error);
-          } finally {
-            setCheckingRegistration(false);
-          }
-        } else {
+        setTournament(loadedTournament);
+
+        const registrationsPromise = getTournamentRegistrationsBySlug(slug)
+          .then((data) => {
+            setRegistrations(data.registrations || []);
+          })
+          .catch(() => {
+            setRegistrations([]);
+          });
+
+        if (!token || !loadedTournament?.id) {
+          setMyRegistration(null);
+          setMyDecklist(null);
+          await registrationsPromise;
+          return loadedTournament;
+        }
+
+        setCheckingRegistration(true);
+
+        let registration = null;
+
+        try {
+          const registrationData = await getMyTournamentRegistration(
+            loadedTournament.id,
+            token
+          );
+
+          registration = registrationData.registration || null;
+          setMyRegistration(registration);
+        } catch (error) {
+          registration = null;
           setMyRegistration(null);
           setMyDecklist(null);
         }
+
+        const userIsRegistered =
+          registration?.registration_status === 'registered';
+
+        if (userIsRegistered) {
+          try {
+            const decklistData = await getMyTournamentDecklist(
+              loadedTournament.id,
+              token
+            );
+
+            setMyDecklist(decklistData.decklist || null);
+          } catch (error) {
+            setMyDecklist(null);
+          }
+        } else {
+          setMyDecklist(null);
+        }
+
+        await registrationsPromise;
+
+        return loadedTournament;
       } catch (error) {
         console.error('Error loading public tournament:', error);
         toast.error(error.message || 'No se pudo cargar el torneo');
+        setTournament(null);
+        return null;
       } finally {
         setLoading(false);
+        setCheckingRegistration(false);
       }
-    };
+    },
+    [slug, token]
+  );
 
-    if (slug) {
-      run();
-    }
-  }, [slug, token]);
+  useEffect(() => {
+    if (!slug) return;
+
+    loadPageData({ showMainLoading: true });
+  }, [slug, token, loadPageData]);
 
   useEffect(() => {
     setRawInput('');
@@ -318,7 +350,7 @@ export default function TournamentPublicPage() {
         token
       );
 
-      await reloadAll();
+      await loadPageData();
       toast.success('Te registraste correctamente');
     } catch (error) {
       console.error('Error registering to tournament:', error);
@@ -337,7 +369,7 @@ export default function TournamentPublicPage() {
       await unregisterFromTournament(tournament.id, token);
       setMyRegistration(null);
       setMyDecklist(null);
-      await reloadAll();
+      await loadPageData();
       setActiveSection('info');
       toast.success('Tu inscripción fue cancelada');
     } catch (error) {
@@ -367,7 +399,7 @@ export default function TournamentPublicPage() {
       }
 
       setRawInput('');
-      await reloadAll();
+      await loadPageData();
     } catch (error) {
       console.error('Error saving decklist:', error);
       toast.error(error.message || 'No se pudo guardar el decklist');
